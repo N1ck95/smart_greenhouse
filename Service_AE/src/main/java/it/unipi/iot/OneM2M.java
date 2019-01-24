@@ -125,5 +125,8 @@ public class OneM2M {
 		System.out.println(payload.toString());
 		
 		CoapResponse resp = client.advanced(request);
+		
+		//TODO: add check on the response
+		System.out.println(resp.getResponseText());
 	}
 }
