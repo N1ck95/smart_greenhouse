@@ -1,6 +1,8 @@
 package it.unipi.iot;
 
 import org.eclipse.californium.core.CoapClient;
+import org.eclipse.californium.core.CoapHandler;
+import org.eclipse.californium.core.CoapObserveRelation;
 import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.coap.CoAP.Code;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
@@ -19,10 +21,10 @@ public class BrokerCoAP {
 		this.broker_ip = broker_ip;
 	}
 	
-	public String subscribe(String topic) throws Exception {
+	/*public String subscribe(String topic) throws Exception {
 		CoapClient client = new CoapClient(broker_ip + "/" + topic);
 		Request request = new Request(Code.GET);
-		request.getOptions().addUriQuery("Observe=10");
+		request.getOptions().addUriQuery("Observe=0");
 		request.getOptions().setAccept(MediaTypeRegistry.TEXT_PLAIN);
 		CoapResponse response = client.advanced(request);
 		
@@ -47,7 +49,22 @@ public class BrokerCoAP {
 		}else {
 			throw new Exception("Unexpected response code");
 		}
-	}
+	}*/
+	
+	/*public String subscribeSensor(String topic, CoapHandler handler) {
+		CoapClient client = new CoapClient(broker_ip + "/" + topic);
+		CoapObserveRelation relation = client.observe(
+				new CoapHandler() {
+					public void onLoad(CoapResponse response) {
+						String content = response.getResponseText();
+						
+					}
+					
+					public void onError() {
+						
+					}
+				});
+	}*/
 	
 	public void publish(String uri, String content) {
 		CoapClient client = new CoapClient(uri);
