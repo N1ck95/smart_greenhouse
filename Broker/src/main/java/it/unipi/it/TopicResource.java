@@ -1,9 +1,8 @@
 package it.unipi.it;
 
 import org.eclipse.californium.core.CoapResource;
-import org.eclipse.californium.core.coap.CoAP.CodeClass;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
-import org.eclipse.californium.core.coap.Response;
+import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 
 public class TopicResource extends CoapResource{
@@ -12,6 +11,7 @@ public class TopicResource extends CoapResource{
 	
 	public TopicResource(String name, int ct) {
 		super(name);
+		this.setObservable(true);
 		contentType = ct;
 		value = null;
 	}
@@ -21,8 +21,8 @@ public class TopicResource extends CoapResource{
 		int ct = exchange.getRequestOptions().getContentFormat();
 		if(this.contentType == ct) {
 			this.value = exchange.getRequestText();
-			this.notifyAll();	//TODO: check
 			exchange.respond(ResponseCode.CHANGED);
+			this.notifyObserverRelations(null);
 		}else {
 			exchange.respond(ResponseCode.BAD_REQUEST);
 		}
@@ -33,11 +33,14 @@ public class TopicResource extends CoapResource{
 		if(value == null) {
 			//No content published on this topic
 			//TODO: check how to create a custom response code (need 2.07 for NO_CONTENT)
-			//exchange.respond((CodeClass.SUCCESS_RESPONSE,7));
+			exchange.respond(ResponseCode.NO_CONTENT);
 		}else {
-			if(exchange.getRequestOptions().isContentFormat(contentType)) {
+			if(exchange.getRequestOptions().isAccept(contentType)){
+			//if(exchange.getRequestOptions().isContentFormat(contentType)) {
 				exchange.respond(ResponseCode.CONTENT, value);
 			}else {
+				System.out.println("Received accept: " + exchange.getRequestOptions().getAccept());
+				System.out.println("My content format is: " + contentType);
 				exchange.respond(ResponseCode.UNSUPPORTED_CONTENT_FORMAT);
 			}
 		}

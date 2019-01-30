@@ -49,7 +49,7 @@ public class OneM2M {
 	}
 	
 	public void createContainer(String path, String container_name) throws Exception {
-		CoapClient client = new CoapClient(this.node_ip + "/~/" + this.node_id + "/" + this.node_name + "/" + path);
+		CoapClient client = new CoapClient("coap://" + this.node_ip + "/~/" + this.node_id + "/" + this.node_name + "/" + path);
 		
 		//Create the new payload
 		JSONObject payload = new JSONObject();
@@ -82,6 +82,8 @@ public class OneM2M {
 	
 	public void publishContentInstance(String path, String value) {
 		CoapClient client = new CoapClient(this.node_ip + "/~/" + this.node_id + "/" + this.node_name + "/" + path);
+		System.out.println("Value to publish on MN: " + value);
+		System.out.println("Publish on: " + path);
 		
 		//Create the new payload
 		JSONObject payload = new JSONObject();
