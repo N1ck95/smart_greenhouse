@@ -18,12 +18,12 @@ public class Broker extends CoapServer{
 		server.start();
 		server.add(new RootResource("ps"));	//Root resource
 		
-		System.out.println("Childrens:");
+		/*System.out.println("Childrens:");
 		Collection<Resource> childrens = server.getRoot().getChildren();
 		Iterator<Resource> it = childrens.iterator();
 		while(it.hasNext()) {
 			System.out.println("Children: " + it.next().getName());
-		}
+		}*/
 	
 	}
 }

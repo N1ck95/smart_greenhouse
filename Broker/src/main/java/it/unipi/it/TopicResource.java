@@ -7,7 +7,7 @@ import org.eclipse.californium.core.server.resources.CoapExchange;
 
 public class TopicResource extends CoapResource{
 	int contentType;	//Accepted content type for this topic
-	String value;
+	public String value;
 	
 	public TopicResource(String name, int ct) {
 		super(name);
@@ -16,9 +16,17 @@ public class TopicResource extends CoapResource{
 		value = null;
 	}
 	
-	public void handlePOST(CoapExchange exchange) {
+	public TopicResource(String name, String ct) {
+		super(name);
+		this.setObservable(true);
+		contentType = Integer.parseInt(ct);
+		value = null;
+	}
+	
+	public void handlePUT(CoapExchange exchange) {
 		//Publish request
 		int ct = exchange.getRequestOptions().getContentFormat();
+		System.out.println("Received PUT request");
 		if(this.contentType == ct) {
 			this.value = exchange.getRequestText();
 			exchange.respond(ResponseCode.CHANGED);
@@ -50,6 +58,10 @@ public class TopicResource extends CoapResource{
 		//Remove request
 		this.delete();
 		exchange.respond(ResponseCode.DELETED);
+	}
+	
+	public void notifyObservers() {
+		this.notifyObserverRelations(null);
 	}
 	
 }

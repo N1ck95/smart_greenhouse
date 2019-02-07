@@ -1,8 +1,14 @@
 package it.unipi.iot;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapHandler;
@@ -18,6 +24,10 @@ import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.Request;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 public class Service_AE extends CoapServer{
 	final static String middle_ip = "127.0.0.1";			//Middle node ip
@@ -30,7 +40,7 @@ public class Service_AE extends CoapServer{
 	final static int PORT = 6000;							//Port of this AE
 	
 	public static void main(String[] args) throws InterruptedException {
-		final BrokerCoAP broker = new BrokerCoAP(broker_uri);
+		final BrokerCoAP broker = new BrokerCoAP(broker_uri, BROKER_PORT);
 		//Tree devices = new Tree("Service_AE");
 		final OneM2M middle_node = new OneM2M(middle_ip, middle_id, middle_name);	//To interact with middle_node
 		final Service_AE server = new Service_AE();
@@ -175,19 +185,70 @@ public class Service_AE extends CoapServer{
 							//devices.addActuator(MAC, sector);	//Todo: check if can be avoided
 							//Is an actuator --> subscribe to the container just created
 							//create a resource in the CoapMonitor to handle updates of this container
-							if(server.getRoot().getChild(topic) == null) {
+							if(server.getRoot().getChild(MAC) == null) {
 								//resource to handle this container not jet created
-								server.add(
-										new CoapResource(topic) {
+								//TODO: modify into a nested CoapResources creation
+								server.add(new CoapResource("Service_AE").add(new CoapResource(sector).add(new CoapResource(type).add(new CoapResource(model).add(new CoapResource(MAC) {
+										@SuppressWarnings("unused")	//Is used remotely
+										public void handlePOST(CoapExchange exchange){
+											exchange.respond(ResponseCode.CREATED);
+											String payload = exchange.getRequestText();
+											System.out.println("[DEBUG] actuator update: " + payload);
+											
+											DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+										    DocumentBuilder builder;
+											try {
+												builder = factory.newDocumentBuilder();
+												InputSource is = new InputSource(new StringReader(payload));
+												Document xmlDoc = builder.parse(is);
+												/*NodeList list = xmlDoc.getElementsByTagName("m2m:cin");
+												if(list.getLength() == 1) {
+													NodeList conList = xmlDoc.getElementsByTagName("con");
+													String val = conList.item(0).getTextContent();
+													if(!val.equals("null")) {
+														//Value published is not null
+														System.out.println("[DEBUG] actuator new value: " + val);
+														broker.publish("/ps" + this.getPath() + this.getName(), val);	//publish the update 
+													}
+												}*/
+												NodeList conList = xmlDoc.getElementsByTagName("con");
+												if(conList.getLength() == 1) {
+													String val = conList.item(0).getTextContent();
+													System.out.println("[DEBUG] actuator new value: " + val);
+													broker.publish("/ps" + this.getPath() + this.getName(), val);	//publish the update 
+												}
+											} catch (ParserConfigurationException e) {
+												System.err.println("[ERROR] Error creating DocumentBuilder for XML");
+											} catch (SAXException e) {
+												// TODO Auto-generated catch block
+												e.printStackTrace();
+											} catch (IOException e) {
+												// TODO Auto-generated catch block
+												e.printStackTrace();
+											}
+											
+											/*JSONObject jsonPayload = new JSONObject(payload);
+											if(jsonPayload.has("m2m:cin")) {
+												//The message contains data of this topic
+												JSONObject cin = (JSONObject) jsonPayload.get("m2m:cin");
+												String val = cin.get("con").toString();
+												System.out.println("[DEBUG] actuator new value: " + val);
+												broker.publish("/ps" + this.getPath() + this.getName(), val);	//publish the update 
+											}*/
+										}
+								})))));
+								
+								/*server.add(
+										new CoapResource(MAC) {
 											@SuppressWarnings("unused")	//Is used remotely
-											public void handlePost(CoapExchange exchange){
+											public void handlePOST(CoapExchange exchange){
 												exchange.respond(ResponseCode.CREATED);
 												String payload = exchange.getRequestText();
-												broker.publish(this.getName(), payload);	//publish the update 
+												broker.publish("/ps/" + this.getName(), payload);	//publish the update 
 											}
-										});
+										});*/
 							}
-							middle_node.subscribe(topic, topic);	//Subscribe to the given topic on the MN, the resource that will handle updates have the same name of topic
+							middle_node.subscribe(topic, String.valueOf(PORT), "Service_AE/" + sector + "/" + type + "/" + model + "/" + MAC);	//Subscribe to the given topic on the MN, the resource that will handle updates have the same name of topic
 						}
 					}
 				}

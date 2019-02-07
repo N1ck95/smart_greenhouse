@@ -107,19 +107,20 @@ public class OneM2M {
 		System.out.println("Response: " +response.getResponseText());
 	}
 	
-	public void subscribe(String path, String resource) {
+	public void subscribe(String path, String serverPort, String resource) {
 		CoapClient client = new CoapClient(this.node_ip + "/~/" + this.node_id + "/" + this.node_name + "/" + path);
 		
 		Request request = new Request(Code.POST);
 		request.getOptions().addOption(new Option(256, "admin:admin"));
 		request.getOptions().addOption(new Option(267, 23));	//Resource type is notification = 23
 		request.getOptions().setContentFormat(MediaTypeRegistry.APPLICATION_JSON);
-		
+		request.getOptions().setAccept(MediaTypeRegistry.APPLICATION_XML);
 		JSONObject payload = new JSONObject();
 		JSONObject obj = new JSONObject();
 		
-		obj.put("rn", "Monitor1");
-		obj.put("nu", "coap://192.168.228.128:5685/" + resource);
+		obj.put("rn", "Monitor");
+		obj.put("nu", "coap://" + this.node_ip + ":" + serverPort + "/" + resource);
+		System.out.println("Subscribe relation resource: " + resource);
 		obj.put("nct", 2);
 		payload.put("m2m:sub", obj);
 		
