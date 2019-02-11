@@ -18,6 +18,11 @@ import java.util.Scanner;
  */
 public class App 
 {
+	final static String middle_ip = "127.0.0.1";			//Middle node ip
+	final static String middle_id = "niccolo-mn-cse";		//Middle node id
+	final static String middle_name = "niccolo-mn-name";	//Middle node name
+	final static String AE_name = "Control_AE";				//Name of the Application Entity
+	
 	public void createSubscription(String cse, String ResourceName, String notificationUrl){
 		CoapClient client = new CoapClient(cse);
 		Request req = Request.newPost();
@@ -44,16 +49,16 @@ public class App
     	
     	AE_Control adn = new AE_Control();
     	//create applications entities for control and security
-		AE ae = adn.createAE_Control("coap://127.0.0.1:5683/~/mn-cse", "ControlApp-ID", "Control_AE");
+		AE ae = adn.createAE_Control("coap://127.0.0.1:5683/~/" + middle_id, "ControlApp-ID", "Control_AE");
 		//AE ae_security = adn.createAE_Control("coap://127.0.0.1:5683/~/mn-cse", "SecurityApp-ID", "Security_AE");
-		AE ae_prova = adn.createAE_Control("coap://127.0.0.1:5683/~/mn-cse", "provaApp-ID", "Prova_AE");
+		AE ae_prova = adn.createAE_Control("coap://127.0.0.1:5683/~/" + middle_id, "provaApp-ID", "Prova_AE");
 		//create containers to test the application(in fact these containers are unneeded, they are just for test
-		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE", "Sector1");
-		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector1", "Sensor");
-		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector1/Sensor", "Humid");
-		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector1/Sensor/Humid", "Sensor0");
-		adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector1/Sensor/Humid/Sensor0", "10");
-		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE", "Sector2");
+		adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name, "Sector1");
+		adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + "Sector1", "Sensor");
+		adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + "Sector1" + "/Sensor", "Humid");
+		adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + "Sector1" + "/Sensor/Humid", "Sensor0");
+		adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + "Sector1" + "/Sensor/Humid/Sensor0", "10");
+		/*adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE", "Sector2");
 		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector2", "Sensor");
 		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector2/Sensor", "Temp");
 		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector2/Sensor/Temp", "Sensor0");
@@ -61,27 +66,24 @@ public class App
 		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector1", "Actuators");
 		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector1/Actuators", "Irrigators");
 		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector1/Actuators/Irrigators", "Irrigator0");
-		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector1/Actuators/Irrigators", "Irrigator1");
+		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector1/Actuators/Irrigators", "Irrigator1");*/
 		
 		
 		Integer i = new Integer(0);
 		
-		Integer num_sectors = new Integer(2);
 		Integer num_resources_mn = new Integer(0);//number of resources i.e paths returned by the discovery
 		//String[] resources_paths_mn = new String[100];
 		//String[] resources_mn_full_path_mn = new String[100];
 		 List<String> resources_paths_mn = new ArrayList<String>();
+		 List<String> actuators_paths_mn = new ArrayList<String>();
 		 List<String> resources_paths_mn_security = new ArrayList<String>();
 		 List<String> discovery = new ArrayList<String>();
 		 List<String> resources_mn_full_path_mn = new ArrayList<String>();
 		//the service_ae is created by niccolo, i dont create it, i just do a discovery of its resources
 		//the argument in the discovery should be just the port of the middle node without the service_ae or with it?
 		//perform the discovery
-		discovery = adn.Discovery("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE");//this is the port of the middle node?
+		discovery = adn.Discovery("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name);//this is the port of the middle node?
 		System.out.println(discovery.get(0));
-		System.out.println(discovery.get(1));
-		System.out.println(discovery.get(2));
-		System.out.println(discovery.get(3));
 		num_resources_mn = discovery.size();
 		System.out.println(num_resources_mn);
 		String pom;
@@ -90,20 +92,24 @@ public class App
 			if (discovery.get(i).contains("Sensor")) {
 				pom = discovery.get(i);
 				resources_paths_mn.add(pom);
-				}
-		} 
-		System.out.println(resources_paths_mn.get(0));
-		System.out.println(resources_paths_mn.get(1));
+			}else {
+				pom = discovery.get(i);
+				actuators_paths_mn.add(pom);
+			}
+		}
+		//System.out.println(resources_paths_mn.get(0));
+		//System.out.println(resources_paths_mn.get(1));
 		num_resources_mn = resources_paths_mn.size();
 		System.out.println(num_resources_mn);
 		//find the number of sectors
-		/*for (i = 0; i< num_resources_mn; i++) {
-			if (i>0) {
-				if ((f_paths.get(i).substring(0,7).equals(f_paths.get(i-1).substring(0, 7)))==false) {
-					num++;
-				}
+		ArrayList<Sector> sectors = new ArrayList<Sector>();
+		for (i = 0; i< num_resources_mn; i++) {
+			String[] subpaths = resources_paths_mn.get(i).split("/");
+			if(sectors.contains(subpaths[3]) == false) {
+				//new sector
+				sectors.add(new Sector(subpaths[3]));
 			}
-		}*/
+		}
 		//Container control_app_cont = new Container();
 		//control_app_cont = adn.createContainer("coap://127.0.0.1:5684/~/mn-cse/mn-name/Control_AE");
 		//mi sottoscrivo sul coap monitor server per tutti i contenitori dal applicazione dei servizi(quelli che mi servono)
@@ -115,54 +121,61 @@ public class App
 		List<String> target_humid = new ArrayList<String>();
 		List<String> target_light = new ArrayList<String>();
 		List<String> target_soilmoist = new ArrayList<String>();
+		
 
-
+		int num_sectors = sectors.size();
 
 		String target;
 		Scanner reader = new Scanner(System.in);  // Reading from System.in
 		for(i = 0;i < num_sectors; i++) {
-			System.out.println("Enter the target temp for sector " + i);
+			System.out.println("Enter the target temp for sector " + sectors.get(i));
 			target = reader.next();
 			target_temp.add(target);
 			
-			System.out.println("Enter the target humidity for sector " + i);
+			System.out.println("Enter the target humidity for sector " + sectors.get(i));
 			target = reader.next();
 			target_humid.add(target);
 			
-			System.out.println("Enter the target light for sector " + i);
+			System.out.println("Enter the target light for sector " + sectors.get(i));
 			target = reader.next();
 			target_light.add(target);
 			
-			System.out.println("Enter the target soil moisture for sector " + i);
+			System.out.println("Enter the target soil moisture for sector " + sectors.get(i));
 			target = reader.next();
 			target_soilmoist.add(target);
-			
 		}
 		
 		reader.close();
 		for (i = 0; i< num_sectors ;i++) {
-			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE", "Sector"+ i);
-			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/Sector" + i, "TargetTemp");
-			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/Sector" + i + "/TargetTemp", target_temp.get(i));
-			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/Sector" + i, "TargetHumid");
-			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/Sector" + i + "/TargetHumid", target_humid.get(i));
-			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/Sector" + i, "TargetLight");
-			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/Sector" + i + "/TargetLight", target_light.get(i));
-			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/Sector" + i, "TargetSoilMoist");
-			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/Sector" + i + "/TargetSoilMoist", target_soilmoist.get(i));
-		}
-		//create the containers in the security application entity
-		/*for (i = 0; i< num_sectors ;i++) {
-			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Security_AE", "Sector"+ i);
-			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Security_AE/Sector" + i, "MovementAlarmStatus");
-			
-		}*/
+			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE", sectors.get(i).sectorName);
+			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i), "TargetTemp");
+			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i) + "/TargetTemp", target_temp.get(i));
+			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i), "TargetHumid");
+			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i) + "/TargetHumid", target_humid.get(i));
+			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i), "TargetLight");
+			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i) + "/TargetLight", target_light.get(i));
+			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i), "TargetSoilMoist");
+			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i) + "/TargetSoilMoist", target_soilmoist.get(i));
 		
-		//this for is not needed
-		for(i = 0; i< num_resources_mn; i++) {
-			//qui metto il nome della application entity su cui voglio fare la sottoscrizione?
-			resources_mn_full_path_mn.add("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/" + resources_paths_mn.get(i));
-			//resources_mn_full_path_mn[i] = "coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + resources_paths_mn[i];
+			for(int j = 0; j < actuators_paths_mn.size(); j++) {
+				String[] sub = actuators_paths_mn.get(j).split("/");
+				String sector = sub[0];
+				String type = sub[2];
+				if(sectors.get(i).equals(sector)) {
+					//Actuator belongs to this sector
+					if(type.equals("fan")) {
+						sectors.get(i).fans.add(actuators_paths_mn.get(j));
+					}else if(type.equals("irrigator")) {
+						sectors.get(i).irrigators.add(actuators_paths_mn.get(j));
+					}else if(type.equals("lamp")) {
+						sectors.get(i).lamps.add(actuators_paths_mn.get(j));
+					}else if(type.equals("sprinkler")) {
+						sectors.get(i).sprinklers.add(actuators_paths_mn.get(j));
+					}else if(type.equals("alarm")) {
+						sectors.get(i).alarms.add(actuators_paths_mn.get(j));
+					}
+				}
+			}
 		}
 				
 		//String monitor_port = "coap://127.0.0.1:5685/";
@@ -172,7 +185,7 @@ public class App
 		for(i = 0; i< num_resources_mn; i++) {
 			//first create the resource in the monitor
 			//should the resource name be "monitor/" + resources_paths_mn[i] or just resources_paths_mn[i]?
-			//monitor.addResource(resources_paths_mn[i]);	
+			//monitor.addResource(resources_paths_mn[i]);
 			monitor.addResource(resources_paths_mn.get(i));
 		}
 		monitor.start();

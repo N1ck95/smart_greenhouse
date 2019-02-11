@@ -123,7 +123,7 @@ public class Service_AE extends CoapServer{
 						String MAC = path[4];
 						
 						
-						System.out.println("valid topic");
+						//System.out.println("valid topic");
 						//Create the containers for this device on OneM2M
 						
 						try {
@@ -220,8 +220,8 @@ public class Service_AE extends CoapServer{
 											} catch (ParserConfigurationException e) {
 												System.err.println("[ERROR] Error creating DocumentBuilder for XML");
 											} catch (SAXException e) {
-												// TODO Auto-generated catch block
-												e.printStackTrace();
+												//Error parsing XML document
+												System.err.println("[ERROR] Error parsing XML document: " + e.getMessage());
 											} catch (IOException e) {
 												// TODO Auto-generated catch block
 												e.printStackTrace();

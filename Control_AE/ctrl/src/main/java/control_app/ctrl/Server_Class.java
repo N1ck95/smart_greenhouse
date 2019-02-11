@@ -2,6 +2,7 @@ package control_app.ctrl;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 
 import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapResource;
@@ -19,7 +20,18 @@ public class Server_Class extends Thread{
 	    }
 
 	    public void addResource(String resource) {
-	      
+	    	
+	    	
+	    	
+	    	String[] parts = resource.split("/");
+	    	//server.add(new CoapResource("Prova_AE").add(new CoapResource(parts[1]).add(new CoapResource(parts[2]).add(new CoapResource(parts[3])))));
+	    	server.add(new CoapResource(parts[0]).add(new CoapResource(parts[1]).add(new CoapResource(parts[2]).add(new Resource(parts[3])))));
+	    	//server.add(new Resource(resource));
+	    
+	    }
+	    
+	    public void addResource(String resource, List<Sector> sectors) {
+	    	
 	    	
 	    	String[] parts = resource.split("/");
 	    	//server.add(new CoapResource("Prova_AE").add(new CoapResource(parts[1]).add(new CoapResource(parts[2]).add(new CoapResource(parts[3])))));

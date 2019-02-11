@@ -11,6 +11,7 @@ import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.Option;
 import org.eclipse.californium.core.coap.Request;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class AE_Control {
@@ -143,7 +144,9 @@ public class AE_Control {
 	    }
 	    return count;
 	}
-	  public  List<String> Discovery(String cse){
+	
+	
+	public  ArrayList<String> Discovery(String cse){
 		  
 	    URI uri = null;
 	    try {
@@ -162,382 +165,28 @@ public class AE_Control {
 	    CoapResponse responseBody = client.advanced(req);
 	    
 	    String response = new String(responseBody.getPayload());
-	    System.out.println("response e " + response);
+	    System.out.println("[DEBUG] payload discovery response: " + response);
 	    
-	    String substr_response = response.substring(19);
-	    System.out.println(substr_response);
-	    String[] parts = substr_response.split(" ");
+	    ArrayList<String> final_paths = new ArrayList<String>();
 	    
-	   
-	    int i = 0;
-	    int j = 0;
-	    int k = 0;
-	    List<String> full_paths = new ArrayList<String>();
-	    //String[] full_paths = new String[8];
-	  
-	   
-	    Integer isPresentTemp = new Integer(0);
-	    Integer isPresentTempCount = new Integer(0);
-	    Integer isPresentHumidCount = new Integer(0);
-	    Integer isPresentHumid = new Integer(0);
-	    Integer isPresentLightCount = new Integer(0);
-	    Integer isPresentLight = new Integer(0);
-	    Integer isPresentSoilMCount = new Integer(0);
-	    Integer isPresentSoilM = new Integer(0);
-	    Integer isPresentSmokeCount = new Integer(0);
-	    Integer isPresentSmoke = new Integer(0);
-	    Integer isPresentPirCount = new Integer(0);
-	    Integer isPresentPir = new Integer(0);
-	    Integer isPresentCameraCount = new Integer(0);
-	    Integer isPresentCamera = new Integer(0);
-	    Integer isPresentFanCount = new Integer(0);
-	    Integer isPresentFan = new Integer(0);
-	    Integer isPresentLampCount = new Integer(0);
-	    Integer isPresentLamp = new Integer(0);
-	    Integer isPresentIrrigCount = new Integer(0);
-	    Integer isPresentIrrig = new Integer(0);
+	    JSONObject jsonPayload = new JSONObject(response);
+	    JSONArray paths = jsonPayload.getJSONArray("m2m:uril");
 	    
-	   
-	    Integer change = new Integer(0);
-	    int count = 0;
-	    int change_sens_act = 0;
-	    if (parts[0].contains("Sensor"))
-	    	change_sens_act = 1;
-	    if (parts[0].contains("Actuators"))
-	    	change_sens_act = 2;
-	    for(i = 0; i< parts.length; i++) {
-	    	count = 0;
-	    	count = countOccurrences(parts[i], '/');
-	    	/*if (parts[i].contains("Sensor") && (change_sens_act==2) )
-	    	{
-	    		change_sens_act = 3;
-	    		isPresentTempCount = 0;
-	    		isPresentTemp = 0;
-	    		isPresentHumidCount = 0;
-	    		isPresentHumid = 0;
-	    		isPresentLightCount = 0;
-	    		isPresentLight = 0;
-	    		isPresentSoilMCount = 0;
-	    		isPresentSoilM = 0;
-	    		isPresentSmokeCount = 0;
-	    		isPresentSmoke = 0;
-	    		isPresentPirCount = 0;
-	    		isPresentPir = 0;
-	    		isPresentCameraCount = 0;
-	    		isPresentCamera = 0;
-	    		isPresentLamp = 0;
-	    		isPresentLampCount = 0;
-	    		isPresentFan = 0;
-	    		isPresentFanCount = 0;
-	    		isPresentIrrig = 0;
-	    		isPresentIrrigCount = 0;
-	    	}
-	    	if (parts[i].contains("Actuators") && (change_sens_act==1) )
-	    	{
-	    		change_sens_act = 3;
-	    		isPresentTempCount = 0;
-	    		isPresentTemp = 0;
-	    		isPresentHumidCount = 0;
-	    		isPresentHumid = 0;
-	    		isPresentLightCount = 0;
-	    		isPresentLight = 0;
-	    		isPresentSoilMCount = 0;
-	    		isPresentSoilM = 0;
-	    		isPresentSmokeCount = 0;
-	    		isPresentSmoke = 0;
-	    		isPresentPirCount = 0;
-	    		isPresentPir = 0;
-	    		isPresentCameraCount = 0;
-	    		isPresentCamera = 0;
-	    		isPresentLamp = 0;
-	    		isPresentLampCount = 0;
-	    		isPresentFan = 0;
-	    		isPresentFanCount = 0;
-	    		isPresentIrrig = 0;
-	    		isPresentIrrigCount = 0;
-	    	}*/
-	    	
-	    	if ((parts[i].contains("Sector2")) && (change == 0)  ) {
-	    		
-	    		change = 1;
-	    		isPresentTempCount = 0;
-	    		isPresentTemp = 0;
-	    		isPresentHumidCount = 0;
-	    		isPresentHumid = 0;
-	    		isPresentLightCount = 0;
-	    		isPresentLight = 0;
-	    		isPresentSoilMCount = 0;
-	    		isPresentSoilM = 0;
-	    		isPresentSmokeCount = 0;
-	    		isPresentSmoke = 0;
-	    		isPresentPirCount = 0;
-	    		isPresentPir = 0;
-	    		isPresentCameraCount = 0;
-	    		isPresentCamera = 0;
-	    		isPresentLamp = 0;
-	    		isPresentLampCount = 0;
-	    		isPresentFan = 0;
-	    		isPresentFanCount = 0;
-	    		isPresentIrrig = 0;
-	    		isPresentIrrigCount = 0;
-	    		
-	    		
-	    	}
-	    	
-	    	if ((parts[i].contains("Sector3")) && (change == 1)  ) {
-	    		
-	    		change = 2;
-	    		isPresentTempCount = 0;
-	    		isPresentTemp = 0;
-	    		isPresentHumidCount = 0;
-	    		isPresentHumid = 0;
-	    		isPresentLightCount = 0;
-	    		isPresentLight = 0;
-	    		isPresentSoilMCount = 0;
-	    		isPresentSoilM = 0;
-	    		isPresentSmokeCount = 0;
-	    		isPresentSmoke = 0;
-	    		isPresentPirCount = 0;
-	    		isPresentPir = 0;
-	    		isPresentCameraCount = 0;
-	    		isPresentCamera = 0;
-	    		isPresentLamp = 0;
-	    		isPresentLampCount = 0;
-	    		isPresentFan = 0;
-	    		isPresentFanCount = 0;
-	    		isPresentIrrig = 0;
-	    		isPresentIrrigCount = 0;
-	    		
-	    	}
-	    	if ((parts[i].contains("Sector4")) && (change == 2)  ) {
-	    		
-	    		change = 3;
-	    		isPresentTempCount = 0;
-	    		isPresentTemp = 0;
-	    		isPresentHumidCount = 0;
-	    		isPresentHumid = 0;
-	    		isPresentLightCount = 0;
-	    		isPresentLight = 0;
-	    		isPresentSoilMCount = 0;
-	    		isPresentSoilM = 0;
-	    		isPresentSmokeCount = 0;
-	    		isPresentSmoke = 0;
-	    		isPresentPirCount = 0;
-	    		isPresentPir = 0;
-	    		isPresentCameraCount = 0;
-	    		isPresentCamera = 0;
-	    		isPresentLamp = 0;
-	    		isPresentLampCount = 0;
-	    		isPresentFan = 0;
-	    		isPresentFanCount = 0;
-	    		isPresentIrrig = 0;
-	    		isPresentIrrigCount = 0;
-	    		
-	    	}
-	    	
-	    	if (isPresentTemp == 1) {
-	    		
-	    		isPresentTempCount = 2;
-	    		
-	    		
-	    	}
-	    	if (isPresentHumid == 1) {
-	    		
-	    		isPresentHumidCount = 2;
-	    		
-	    		
-	    	}
-	    	if (isPresentLight == 1) {
-	    		
-	    		isPresentLightCount = 2;
-	    		
-	    		
-	    	}
-	    	if (isPresentSoilM == 1) {
-	    		
-	    		isPresentSoilMCount = 2;
-	    		
-	    		
-	    	}
+	    System.out.println("[DEBUG] number of elements in discovery: " + paths.length());
 	    
-	    	
-	    	if (isPresentCamera == 1) {
-	    		
-	    		isPresentCameraCount = 2;
-	    		
-	    		
+	    for(int i = 0; i < paths.length(); i++) {
+	    	String[] subpaths = paths.get(i).toString().split("/");
+	    	//System.out.println(subpaths.length);
+	    	if(subpaths.length == 8) {
+	    		//Is a full path to a sensor
+	    		System.out.println(subpaths[0]);
+	    		String cleaned = paths.getString(i).replace("/" + subpaths[1] + "/" + subpaths[2] + "/" + subpaths[3] + "/", "");
+	    		System.out.println("DEBUG: cleaned = " + cleaned);
+	    		final_paths.add(cleaned);
 	    	}
-	    	if (isPresentFan == 1) {
-	    		
-	    		isPresentFanCount = 2;
-	    		
-	    		
-	    	}
-	    	if (isPresentLamp == 1) {
-	    		
-	    		isPresentLampCount = 2;
-	    		
-	    		
-	    	}
-	    	if (isPresentIrrig == 1) {
-	    		
-	    		isPresentIrrigCount = 2;
-	    		
-	    		
-	    	}
-	    	if ((parts[i].contains("Temp"))  ) {
-	    		isPresentTemp =1;
-	    		
-	    		if ((isPresentTempCount == 2) && (count>6)) {
-	    			//full_paths[j] = parts[i];
-	    			full_paths.add(parts[i]);
-		    		isPresentTemp = 2;
-		    		j++;
-		    		
-		    		
-	    		}
-	    		
-	    		
-	    	}
-	    	if ((parts[i].contains("Humid"))  ) {
-	    		isPresentHumid =1;
-	    		
-	    		if ((isPresentHumidCount == 2)&& (count>6)) {
-	    			//full_paths[j] = parts[i];
-	    			full_paths.add(parts[i]);
-		    		isPresentHumid = 2;
-		    		j++;
-		    		
-		    		
-	    		}
-	    	}
-	    	if ((parts[i].contains("Light")) ) {
-	    		isPresentLight =1;
-	    		
-	    		if ((isPresentLightCount == 2)&& (count>6)) {
-	    			//full_paths[j] = parts[i];
-	    			full_paths.add(parts[i]);
-		    		isPresentLight = 2;
-		    		j++;
-		    		
-		    		
-	    		}
-	    	}
-	    	if ((parts[i].contains("SoilMoist")) ) {
-	    		isPresentSoilM =1;
-	    		
-	    		if ((isPresentSoilMCount == 2)&& (count>6)) {
-	    			//full_paths[j] = parts[i];
-	    			full_paths.add(parts[i]);
-		    		isPresentSoilM = 2;
-		    		j++;
-		    		
-		    		
-	    		}
-	    	}
-	    	
-	    	//will the camera be present in the control app?
-	    	if ((parts[i].contains("Camera")) ) {
-	    		isPresentCamera =1;
-	    		
-	    		if ((isPresentCameraCount == 2)&& (count>6)) {
-	    			//full_paths[j] = parts[i];
-	    			full_paths.add(parts[i]);
-		    		isPresentCamera = 2;
-		    		j++;
-		    		
-		    		
-	    		}
-	    	}
-	    	//actuators part
-	    	if ((parts[i].contains("Fan")) ) {
-	    		isPresentFan =1;
-	    		
-	    		if ((isPresentFanCount == 2)&& (count>6)) {
-	    			//actuators[k] = parts[i];
-	    			//k++;
-	    			//full_paths[j] = parts[i];
-	    			full_paths.add(parts[i]);
-		    		isPresentFan = 2;
-		    		j++;
-		    		
-		    		
-		    		
-	    		}
-	    	}
-	    	if ((parts[i].contains("Lamp")) ) {
-	    		isPresentLamp =1;
-	    		
-	    		if ((isPresentLampCount == 2)&& (count>6)) {
-	    			//actuators[k] = parts[i];
-	    			//k++;
-	    			//full_paths[j] = parts[i];
-	    			full_paths.add(parts[i]);
-		    		isPresentLamp = 2;
-		    		j++;
-		    		
-		    		
-		    		
-	    		}
-	    	} 
-	    	
-	    	
-	    	if ((parts[i].contains("Irrigators"))  ) {
-	    		
-	    		isPresentIrrig =1;
-	    		
-	    		if ((isPresentIrrigCount == 2)&& (count>6)) {
-	    			//actuators[k] = parts[i];
-	    			//k++;
-	    			//full_paths[j] = parts[i];
-	    			full_paths.add(parts[i]);
-		    		isPresentIrrig = 2;
-		    		j++;
-		    		
-		    		
-		    		
-	    		}
-	    	}
-	    	//the sprinklers is for the app of security right? i should remove it right?
-	    	if ((parts[i].contains("Sprinklers")) ) {
-	    		
-    			//actuators[k] = parts[i];
-	    		k++;
-	    	}
-	    	
-	    	
 	    }
-	   
-	    Integer indexSector = new Integer(0);
-	    indexSector = full_paths.get(0).indexOf("Sector");
 	    
-	   
-	    
-	    List<String> final_paths = new ArrayList<String>();
-	   // String[] final_paths = new String[2];
-	    int quot_index = 0;
-	    String help;
-	    for(i = 0; i< full_paths.size(); i++) {
-	    	//if (full_paths[i]!= null) {
-	    	//final_paths.add(full_paths.get(i).substring(indexSector));
-	    	help = full_paths.get(i).substring(indexSector);
-	    	//quot_index = final_paths.get(i).lastIndexOf('"');
-	    	//quot_index = help.lastIndexOf('"');
-	    	//final_paths.add(final_paths.get(i).substring(0, quot_index-1));
-	    	//final_paths.add(help.substring(0, quot_index));
-	    	final_paths.add(help);
-	    	//}
-	    }
-	    quot_index = final_paths.get(i-1).lastIndexOf('"');
-	    help = final_paths.get(i-1).substring(0, quot_index);
-	    final_paths.set(i-1, help);
-	    //int lastOcc = final_paths[1].lastIndexOf(']');
-	   // final_paths[1] = final_paths[1].substring(0, lastOcc-1);
 	    return final_paths;
-		
-	    
-	    
-	      
 	  }
 
 }

@@ -83,6 +83,7 @@ public class RootResource extends CoapResource{
 			//topic to configure a specific device
 			String MAC = path[1];
 			this.add(new TopicResource(MAC, MediaTypeRegistry.TEXT_PLAIN));
+			//TODO: add in payload the URI of created resource
 			exchange.respond(ResponseCode.CREATED);
 			
 			//Check if this MAC is associated to a sector
