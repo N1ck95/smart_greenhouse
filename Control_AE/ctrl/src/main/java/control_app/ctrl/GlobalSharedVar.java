@@ -8,7 +8,7 @@ public class GlobalSharedVar {
 	public GlobalSharedVar(String name) {
 		this.s = new SharedVar();
 		this.name = name;
-	}
+	} 
 	/*
 	public static SharedVar Sector1_Temp;
 	public static SharedVar Sector2_Temp;

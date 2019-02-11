@@ -6,7 +6,7 @@ public class SharedVar {
 	public Boolean state = false;
 	
 	public SharedVar() {
-		val = 0;
+		val = 0; 
 		state = false;
 	}
 	
