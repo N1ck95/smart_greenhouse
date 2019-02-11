@@ -48,7 +48,7 @@ public class Service_AE extends CoapServer{
 		server.start();
 		
 		final Semaphore topic_sem = new Semaphore(1);
-		final ArrayList<String> newTopics = new ArrayList<String>();
+		final ArrayList<Topic> newTopics = new ArrayList<Topic>();
 		
 		//final Semaphore publishSensor_sem = new Semaphore(1);
 		final ArrayList<CI> publishSensor = new ArrayList<CI>();
@@ -60,11 +60,6 @@ public class Service_AE extends CoapServer{
 			System.err.println(e.getMessage());
 		}
 		
-		//TODO: create the CoapMonitor to receive updates about container changes
-		//TODO: create the CoapServer to receive notifications about topic changes
-		
-		//TODO: perform a subscription to the 'sensors' topic of broker to receive updates about newly available topics
-		//try {
 		System.out.println("Subscribing to broker");
 			CoapClient client = new CoapClient(broker_uri + "/ps");	//Subscribe to have notifications about topics
 			@SuppressWarnings("unused")
@@ -72,14 +67,10 @@ public class Service_AE extends CoapServer{
 					new CoapHandler() {
 						public void onLoad(CoapResponse response) {
 							String content = response.getResponseText();
-//							System.out.println("OnLoad");
-//							System.out.println(response.getCode().toString());
 							if(response.getCode() == ResponseCode.CONTENT) {
 								//Response have format: </topic1>,</topic2>,...,</well-known/.core>
 								JSONObject JSONpayload = new JSONObject(content);
 								JSONArray topics = JSONpayload.getJSONArray("topics");
-								//String[] topics = content.split(",");
-								System.out.println("Response for subscribe");
 								
 								//Acquire semaphore
 								try {
@@ -89,8 +80,12 @@ public class Service_AE extends CoapServer{
 								}
 								
 								for(Object topicObj : topics) {
-									String topic = topicObj.toString();
-									System.out.println(topic);
+									JSONObject obj = (JSONObject) topicObj;
+									//String topic = topicObj.toString();
+									Topic topic = new Topic(obj.getString("topic"), obj.getInt("cf"));
+									//String topic = obj.getString("topic");	//Path of the topic
+									//int cf = obj.getInt("cf");	//Content format of the topic
+									System.out.println(topic.topic);
 									
 									newTopics.add(topic);	//Is a shared variable
 								}
@@ -111,10 +106,10 @@ public class Service_AE extends CoapServer{
 					//The list of topics is not empty --> try to add topics to OneM2M
 					
 					//Extract and remove the first element from the list (is a shared variable)
-					String topic = newTopics.get(0);
+					Topic topic = newTopics.get(0);
 					newTopics.remove(0);
 					
-					String[] path = topic.split("/");
+					String[] path = topic.topic.split("/");
 					if(path[0].equals(AE_name)) {
 						//Is a topic that I have to link in OneM2M
 						String sector = path[1];
@@ -122,8 +117,6 @@ public class Service_AE extends CoapServer{
 						String model = path[3];
 						String MAC = path[4];
 						
-						
-						//System.out.println("valid topic");
 						//Create the containers for this device on OneM2M
 						
 						try {
@@ -162,7 +155,7 @@ public class Service_AE extends CoapServer{
 							
 							@SuppressWarnings("unused")
 							CoapObserveRelation sensorRelation = sensorClient.observe(req,
-								new SensorCoapHandler(topic) {
+								new SensorCoapHandler(topic.topic, topic.cf) {
 									
 									public void onLoad(CoapResponse response) {
 										String content = response.getResponseText();
@@ -187,7 +180,6 @@ public class Service_AE extends CoapServer{
 							//create a resource in the CoapMonitor to handle updates of this container
 							if(server.getRoot().getChild(MAC) == null) {
 								//resource to handle this container not jet created
-								//TODO: modify into a nested CoapResources creation
 								server.add(new CoapResource("Service_AE").add(new CoapResource(sector).add(new CoapResource(type).add(new CoapResource(model).add(new CoapResource(MAC) {
 										@SuppressWarnings("unused")	//Is used remotely
 										public void handlePOST(CoapExchange exchange){
@@ -201,16 +193,6 @@ public class Service_AE extends CoapServer{
 												builder = factory.newDocumentBuilder();
 												InputSource is = new InputSource(new StringReader(payload));
 												Document xmlDoc = builder.parse(is);
-												/*NodeList list = xmlDoc.getElementsByTagName("m2m:cin");
-												if(list.getLength() == 1) {
-													NodeList conList = xmlDoc.getElementsByTagName("con");
-													String val = conList.item(0).getTextContent();
-													if(!val.equals("null")) {
-														//Value published is not null
-														System.out.println("[DEBUG] actuator new value: " + val);
-														broker.publish("/ps" + this.getPath() + this.getName(), val);	//publish the update 
-													}
-												}*/
 												NodeList conList = xmlDoc.getElementsByTagName("con");
 												if(conList.getLength() == 1) {
 													String val = conList.item(0).getTextContent();
@@ -223,37 +205,19 @@ public class Service_AE extends CoapServer{
 												//Error parsing XML document
 												System.err.println("[ERROR] Error parsing XML document: " + e.getMessage());
 											} catch (IOException e) {
-												// TODO Auto-generated catch block
-												e.printStackTrace();
+												//IO error parsing XML document
+												System.err.println("[ERROR] I/O error: " + e.getMessage());
 											}
-											
-											/*JSONObject jsonPayload = new JSONObject(payload);
-											if(jsonPayload.has("m2m:cin")) {
-												//The message contains data of this topic
-												JSONObject cin = (JSONObject) jsonPayload.get("m2m:cin");
-												String val = cin.get("con").toString();
-												System.out.println("[DEBUG] actuator new value: " + val);
-												broker.publish("/ps" + this.getPath() + this.getName(), val);	//publish the update 
-											}*/
 										}
 								})))));
-								
-								/*server.add(
-										new CoapResource(MAC) {
-											@SuppressWarnings("unused")	//Is used remotely
-											public void handlePOST(CoapExchange exchange){
-												exchange.respond(ResponseCode.CREATED);
-												String payload = exchange.getRequestText();
-												broker.publish("/ps/" + this.getName(), payload);	//publish the update 
-											}
-										});*/
 							}
-							middle_node.subscribe(topic, String.valueOf(PORT), "Service_AE/" + sector + "/" + type + "/" + model + "/" + MAC);	//Subscribe to the given topic on the MN, the resource that will handle updates have the same name of topic
+							middle_node.subscribe(topic.topic, String.valueOf(PORT), "Service_AE/" + sector + "/" + type + "/" + model + "/" + MAC);	//Subscribe to the given topic on the MN, the resource that will handle updates have the same name of topic
 						}
 					}
 				}
 				topic_sem.release();	//release semaphore
 				
+				//While that checks if there are ContentInstances from sensor to publish on OneM2M
 				while(publishSensor.isEmpty() == false) {
 					CI contentInstance = publishSensor.get(0);
 					publishSensor.remove(0);
@@ -262,88 +226,6 @@ public class Service_AE extends CoapServer{
 				
 				Thread.sleep(500);	//wait before checking again
 			}
-			
-			/*String resp = broker.subscribe("devices");
-			String[] devs = resp.split("\n", 0);
-			for(String device : devs) {
-				String[] path = device.split("/", 0);
-				String sector = path[1];	//Sector
-				String type = path[2];	//Type (sensor or actuator)
-				String MAC = path[3];	//MAC of the device
-				
-				//Create the containers for this device on OneM2M
-				try {
-					middle_node.createContainer(AE_name, sector);	//create the Sector container
-				}catch(Exception e) {
-					System.err.println(e);
-				}
-				
-				try {
-					middle_node.createContainer(AE_name + "/" + sector, type);	//Create the type container
-				}catch(Exception e) {
-					System.err.println(e);
-				}
-				
-				try {
-					middle_node.createContainer(AE_name + "/" + sector + "/" + type, MAC);	//create the device container
-				}catch(Exception e) {
-					System.err.println(e);
-				}
-				
-				if(type.equals("sensor")) {
-					//devices.addSensor(MAC, sector);	//TODO: check if can be avoided
-					//Is a sensor --> I also have to subscribe to this topic
-					try {
-						String res = broker.subscribe(device);
-						if(res != null) {
-							//content already published on this topic --> create a Content Instance
-							middle_node.publishContentInstance(AE_name + "/" + sector + "/" + type + "/" + MAC, res);
-						}
-					}catch(Exception e) {
-						if(e.getMessage().equals("Not found")) {
-							//Error: topic not found
-							System.err.println("Topic '" + device + "' not found");
-						}else {
-							//Generic error: e
-							System.err.println("Error subscribing: " + e.getMessage());
-						}
-					}
-				}else {
-					//devices.addActuator(MAC, sector);	//Todo: check if can be avoided
-					//Is an actuator --> subscribe to the container just created
-					middle_node.subscribe(AE_name + "/" + sector + "/" + type + "/" + MAC, MAC);	//The resource that will receive updates is called as device MAC
-				}
-			}
-		} catch (Exception e) {
-			System.err.println(e.getMessage());
-		}*/
-		
-		
-		/*CoapClient client = new CoapClient(middle_ip + "/~/" + middle_node);
-		
-		//Create the application entity
-		JSONObject payload = new JSONObject();
-		JSONObject obj = new JSONObject();
-		obj.put("api", "Service_AE_ID");	//Application id
-		obj.put("rn", "Service_AE");		//Resource name
-		obj.put("rr", "true");				//Request reachability
-		payload.put("m2m:ae", obj);
-		
-		Request request = new Request(Code.POST);
-		request.getOptions().addOption(new Option(267, 2));	//Set resource type to application entity
-		request.getOptions().addOption(new Option(256, "admin:admin"));
-		request.getOptions().setAccept(MediaTypeRegistry.APPLICATION_JSON);
-		request.getOptions().setContentFormat(MediaTypeRegistry.APPLICATION_JSON);
-		request.setPayload(payload.toString());
-		
-		CoapResponse response = client.advanced(request);
-		
-		if(ResponseCode.isSuccess(response.getCode())) {
-			System.out.println("Response: " + response.getResponseText());
-		}else {
-			System.err.println("Error creating the ApplicationEntity: " + response.getResponseText());
-		}*/
-		
 		
 	}
 

@@ -81,7 +81,7 @@ public class RootResource extends CoapResource{
 		
 		if(path.length == 1) {
 			//topic to configure a specific device
-			String MAC = path[1];
+			String MAC = path[0];
 			this.add(new TopicResource(MAC, MediaTypeRegistry.TEXT_PLAIN));
 			//TODO: add in payload the URI of created resource
 			exchange.respond(ResponseCode.CREATED);
@@ -99,7 +99,7 @@ public class RootResource extends CoapResource{
 			}
 		}else {
 			//topic to receive/send notifications from/to device
-
+			boolean created = false;
 			Resource res = this;
 			for(int i = 0; i < path.length; i++) {
 				Iterator<Resource> childrens = res.getChildren().iterator();
@@ -116,6 +116,7 @@ public class RootResource extends CoapResource{
 					if(i == (path.length - 1)) {
 						//The topic to create is the MAC
 						tmp = new TopicResource(path[i], ct);
+						created = true;
 					}else {
 						//The resource to create is an intermediate
 						tmp = new CoapResource(path[i]);
@@ -126,16 +127,12 @@ public class RootResource extends CoapResource{
 				}
 			}
 			
+			if(created) {
+				exchange.respond(ResponseCode.CREATED);
+			}else {
+				exchange.respond(ResponseCode.BAD_REQUEST);	//TODO: check
+			}
 		}
-		/*if(!topicExists(topic)) {
-			//Topic still not exists
-			this.add(new TopicResource(path[0], Integer.parseInt(ct)));
-			exchange.respond(ResponseCode.CREATED, this.getName() + "/" + topic);
-			this.notifyObserverRelations(null);
-		}else {
-			//Topic already exists
-			exchange.respond(ResponseCode.FORBIDDEN);
-		}*/
 	}
 	
 	public void handleGET(CoapExchange exchange) {
@@ -157,9 +154,12 @@ public class RootResource extends CoapResource{
 							Resource model = it_model.next();
 							Iterator<Resource> it_MAC = model.getChildren().iterator();
 							while(it_MAC.hasNext()) {
-								Resource MAC = it_MAC.next();
+								TopicResource MAC = (TopicResource) it_MAC.next();
 								String topic = res.getName() + "/" + sector.getName() + "/" + type.getName() + "/" + model.getName() + "/" + MAC.getName();
-								topics.put(topic);
+								JSONObject topicObj = new JSONObject();
+								topicObj.put("topic", topic);
+								topicObj.put("cf", MAC.contentType);
+								topics.put(topicObj);
 							}
 						}
 					}
