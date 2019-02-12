@@ -132,6 +132,7 @@ public class AE_Control {
 	    //System.out.println(response);
 	      
 	  }
+	
 	public int countOccurrences(String haystack, char needle)
 	{
 	    int count = 0;
@@ -144,7 +145,6 @@ public class AE_Control {
 	    }
 	    return count;
 	}
-	
 	
 	public  ArrayList<String> Discovery(String cse){
 		  
@@ -168,7 +168,7 @@ public class AE_Control {
 	    System.out.println("[DEBUG] payload discovery response: " + response);
 	    
 	    ArrayList<String> final_paths = new ArrayList<String>();
-	    
+
 	    JSONObject jsonPayload = new JSONObject(response);
 	    JSONArray paths = jsonPayload.getJSONArray("m2m:uril");
 	    

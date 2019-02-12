@@ -29,7 +29,7 @@ public class Resource extends CoapResource{
 	//public boolean changed;
 	//public Integer lastVal;
 	public int targetValue;			//Target value for the measure I'm performing
-	public String controlActuator;	//Type of actuator that I can use
+	public ArrayList<String> controlActuator;	//Type of actuator that I can use
 	public int numActuators;		//Number of target type of actuators
 	
 	public Resource(String name) {
@@ -37,7 +37,7 @@ public class Resource extends CoapResource{
 	    setObservable(false);
 	}
 	
-	public Resource(String name, int targetValue, String controlActuator) {
+	public Resource(String name, int targetValue, ArrayList<String> controlActuator) {
 		super(name);
 		setObservable(false);
 		
@@ -46,10 +46,7 @@ public class Resource extends CoapResource{
 	}
 	
 	    
-    public void handlePOST(CoapExchange exchange) {
-    /* your stuff */
-    	//what is exchange?
-    	
+    /*public void handlePOST(CoapExchange exchange) {
     	String path_resource = exchange.getRequestOptions().getUriPathString();//in the case of the lab04 exercise this returns the path of the resource in the coap server(monitor)
     	//in fact it returned monitor because we only had one resource whose name was monitor
     	//this is also the name of the resource right? yes
@@ -102,6 +99,6 @@ public class Resource extends CoapResource{
 		}
         exchange.respond(ResponseCode.CREATED);
     
-    }
+    }*/
 
 }

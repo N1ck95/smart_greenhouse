@@ -1,17 +1,32 @@
 package control_app.ctrl;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.californium.core.CoapClient;
+import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.Option;
 import org.eclipse.californium.core.coap.Request;
+import org.eclipse.californium.core.coap.CoAP.ResponseCode;
+import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.json.JSONObject;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import java.util.Scanner;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 /**
  * Hello world!
  *
@@ -82,7 +97,7 @@ public class App
 		//the service_ae is created by niccolo, i dont create it, i just do a discovery of its resources
 		//the argument in the discovery should be just the port of the middle node without the service_ae or with it?
 		//perform the discovery
-		discovery = adn.Discovery("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name);//this is the port of the middle node?
+		discovery = adn.Discovery("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Service_AE");//this is the port of the middle node?
 		System.out.println(discovery.get(0));
 		num_resources_mn = discovery.size();
 		System.out.println(num_resources_mn);
@@ -101,8 +116,9 @@ public class App
 		//System.out.println(resources_paths_mn.get(1));
 		num_resources_mn = resources_paths_mn.size();
 		System.out.println(num_resources_mn);
+		
 		//find the number of sectors
-		ArrayList<Sector> sectors = new ArrayList<Sector>();
+		final ArrayList<Sector> sectors = new ArrayList<Sector>();
 		for (i = 0; i< num_resources_mn; i++) {
 			String[] subpaths = resources_paths_mn.get(i).split("/");
 			if(sectors.contains(subpaths[3]) == false) {
@@ -110,6 +126,7 @@ public class App
 				sectors.add(new Sector(subpaths[3]));
 			}
 		}
+		
 		//Container control_app_cont = new Container();
 		//control_app_cont = adn.createContainer("coap://127.0.0.1:5684/~/mn-cse/mn-name/Control_AE");
 		//mi sottoscrivo sul coap monitor server per tutti i contenitori dal applicazione dei servizi(quelli che mi servono)
@@ -179,124 +196,133 @@ public class App
 		}
 				
 		//String monitor_port = "coap://127.0.0.1:5685/";
-		Server_Class monitor = new Server_Class();
+		//Server_Class monitor = new Server_Class();
+		
+		final ArrayList<CI> publishActuation = new ArrayList<CI>();
+		
+		CoapServer server = new CoapServer(5685);
 		
 		//List <Resource> resources_monitor;
 		for(i = 0; i< num_resources_mn; i++) {
 			//first create the resource in the monitor
 			//should the resource name be "monitor/" + resources_paths_mn[i] or just resources_paths_mn[i]?
 			//monitor.addResource(resources_paths_mn[i]);
-			monitor.addResource(resources_paths_mn.get(i));
+			
+			//monitor.addResource(resources_paths_mn.get(i));
+			
+			String[] parts = resources_paths_mn.get(i).split("/");
+			String sector = parts[0];
+			server.add(new CoapResource(parts[0]).add(new CoapResource(parts[1]).add(new CoapResource(parts[2]).add(new Resource(parts[3]) {
+				
+				public void handlePOST(CoapExchange exchange) {
+			    	String path_resource = exchange.getRequestOptions().getUriPathString();//in the case of the lab04 exercise this returns the path of the resource in the coap server(monitor)
+			    	//in fact it returned monitor because we only had one resource whose name was monitor
+			    	//this is also the name of the resource right? yes
+			    	System.out.println(path_resource);//the path of the resource i could have gotten by this.name,right?
+			    	System.out.println(exchange.getRequestText());
+			        System.out.println("received notific");
+
+			        //get info about the sector
+			        
+			        int val;
+			        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			        try {
+						DocumentBuilder builder = factory.newDocumentBuilder();
+						try {
+							InputStream inputStream = new ByteArrayInputStream(exchange.getRequestText().getBytes());
+						    Document doc = builder.parse(inputStream);
+							NodeList item_list = doc.getElementsByTagName("con");
+							if (item_list.getLength() ==1) {
+								Node p = item_list.item(0);
+								Element con = (Element) p;
+								System.out.println(con.getTextContent());
+								val = Integer.parseInt(con.getTextContent());
+								System.out.println("[INFO] valore e "+val);
+								
+								String[] subpaths = path_resource.split("/");
+								String sector = subpaths[0];
+								String type = subpaths[2];						
+								
+								if(type.equals("temperature")) {
+									
+									for(int j = 0; j < sectors.size(); j++) {
+										if(sectors.get(j).sectorName.equals(sector)) {
+											//Info about the sector I have to control
+											this.targetValue = sectors.get(j).targetTemp;
+											this.numActuators = sectors.get(j).fans.size();
+											this.controlActuator = sectors.get(j).fans;
+											break;
+										}
+									}
+									
+									ArrayList<CI> actuation = Controls.temperatureControl(val, this.targetValue, this.controlActuator);
+									
+									//Add to the list of values to publish the commanded action
+									for(int j = 0; j < actuation.size(); j++) {
+										publishActuation.add(actuation.get(j));
+									}
+									
+									
+								}else if(type.equals("humidity")) {
+									
+									for(int j = 0; j < sectors.size(); j++) {
+										if(sectors.get(j).sectorName.equals(sector)) {
+											//Info about the sector I have to control
+											this.targetValue = sectors.get(j).targetHumidity;
+											this.numActuators = sectors.get(j).irrigators.size();
+											this.controlActuator = sectors.get(j).irrigators;
+											break;
+										}
+									}
+									
+									ArrayList<CI> actuation = Controls.humidityControl(val, this.targetValue, this.controlActuator);
+								
+									//add to the list of values to publish the commanded action
+									for(int j = 0; j < actuation.size(); j++) {
+										publishActuation.add(actuation.get(j));
+									}
+								
+								}
+								
+								
+							}
+						} catch (SAXException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					} catch (ParserConfigurationException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+			        exchange.respond(ResponseCode.CREATED);
+			    
+			    }
+				
+			}))));
 		}
-		monitor.start();
 		
+		server.start();
+		//monitor.start();
 		
+		//Subscribe to the sensors to receive updates
 		for(i = 0; i< num_resources_mn; i++) {
 			System.out.println(resources_paths_mn.get(i));
-		ctrl_app.createSubscription("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/" + resources_paths_mn.get(i),
-				resources_paths_mn.get(i).replaceAll("/", "_"), "coap://127.0.0.1:5685/" + resources_paths_mn.get(i));
+			ctrl_app.createSubscription("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/" + resources_paths_mn.get(i),
+			resources_paths_mn.get(i).replaceAll("/", "_"), "coap://127.0.0.1:5685/" + resources_paths_mn.get(i));
 		}	
-		int k = 0;
 		
-		//fare instanze dei threads
-		//fare variabili globali
-		//this should be put into an array which will have the same size as the number of sectors
-		//int[] n_act_fans = new int[num_sectors];
-		//int[] n_act_lamps = new int[num_sectors];
-		//int[] n_act_irrig_humid = new int[num_sectors];
-		//int[] n_act_irrig_soilmoist = new int[num_sectors];
-		//int[] n_act_sprinklers = new int[num_sectors];
-		//int[] n_act_alarms = new int[num_sectors];
-		
-		int n_act_sect1_fans = 0;
-		int n_act_sect2_fans = 0;
-		int n_act_sect3_fans = 0;
-		int n_act_sect4_fans = 0;
-		int n_act_sect5_fans = 0;
-		
-		int n_act_sect1_lamps = 0;
-		int n_act_sect2_lamps = 0;
-		int n_act_sect3_lamps = 0;
-		int n_act_sect4_lamps = 0;
-		int n_act_sect5_lamps = 0;
-		//these below should be irrig_humid
-		int n_act_sect1_irrig = 2;
-		int n_act_sect2_irrig = 0;
-		int n_act_sect3_irrig = 0;
-		int n_act_sect4_irrig = 0;
-		int n_act_sect5_irrig = 0;
-		/*
-		int n_act_sect1_irrig_soilmoist = 2;
-		int n_act_sect2_irrig_soilmoist = 0;
-		int n_act_sect3_irrig_soilmoist = 0;
-		int n_act_sect4_irrig_soilmoist = 0;
-		int n_act_sect5_irrig_soilmoist = 0;*/
-		
-		int n_act_sect1_sprinklers = 0;
-		int n_act_sect2_sprinklers = 0;
-		int n_act_sect3_sprinklers = 0;
-		int n_act_sect4_sprinklers = 0;
-		int n_act_sect5_sprinklers = 0;
-		
-		int n_act_sect1_alarms = 0;
-		int n_act_sect2_alarms = 0;
-		int n_act_sect3_alarms = 0;
-		int n_act_sect4_alarms = 0;
-		int n_act_sect5_alarms = 0;
-		
-		/*ThreadTemp Sector1_Temp = new ThreadTemp("Sector1/Temp");
-		Sector1_Temp.run(Integer.parseInt(target_temp.get(0)), n_act_sect1_fans, Globals.Sector1_Temp, adn);
-		ThreadTemp Sector2_Temp = new ThreadTemp("Sector2/Temp");
-		ThreadTemp Sector3_Temp = new ThreadTemp("Sector3/Temp");
-		ThreadTemp Sector4_Temp = new ThreadTemp("Sector4/Temp");
-		ThreadTemp Sector5_Temp = new ThreadTemp("Sector5/Temp");*/
-		
-		ThreadTemp Sector1_Humid = new ThreadTemp("Sector1/Humid", Integer.parseInt(target_humid.get(0)), n_act_sect1_irrig, Globals.Sector1_Humid, adn, "coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE");
-		Sector1_Humid.start();
-		//ThreadTemp Sector2_Humid = new ThreadTemp("Sector2/Humid");
-		//ThreadTemp Sector3_Humid = new ThreadTemp("Sector3/Humid");
-		//ThreadTemp Sector4_Humid = new ThreadTemp("Sector4/Humid");
-		//ThreadTemp Sector5_Humid = new ThreadTemp("Sector5/Humid");
-		
-		/*ThreadTemp Sector1_Light = new ThreadTemp("Sector1/Light");
-		ThreadTemp Sector2_Light = new ThreadTemp("Sector2/Light");
-		ThreadTemp Sector3_Light = new ThreadTemp("Sector3/Light");
-		ThreadTemp Sector4_Light = new ThreadTemp("Sector4/Light");
-		ThreadTemp Sector5_Light = new ThreadTemp("Sector5/Light");
-		
-		ThreadTemp Sector1_SoilMoist = new ThreadTemp("Sector1/SoilMoist");
-		ThreadTemp Sector2_SoilMoist = new ThreadTemp("Sector2/SoilMoist");
-		ThreadTemp Sector3_SoilMoist = new ThreadTemp("Sector3/SoilMoist");
-		ThreadTemp Sector4_SoilMoist = new ThreadTemp("Sector4/SoilMoist");
-		ThreadTemp Sector5_SoilMoist = new ThreadTemp("Sector5/SoilMoist");
-		
-		SecurityThread Sector1_Smoke = new ThreadTemp("Sector1/Smoke_Sensors", n_act_sect1_sprinklers, Globals Sector1_Smoke, adn, "coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE");
-		SecurityThread Sector2_Smoke = new ThreadTemp("Sector2/Smoke_Sensors", n_act_sect2_sprinklers, Globals Sector2_Smoke, adn, "coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE");
-		SecurityThread Sector3_Smoke = new ThreadTemp("Sector3/Smoke_Sensors", n_act_sect3_sprinklers, Globals Sector3_Smoke, adn, "coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE");
-		SecurityThread Sector4_Smoke = new ThreadTemp("Sector4/Smoke_Sensors", n_act_sect4_sprinklers, Globals Sector4_Smoke, adn, "coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE");
-		SecurityThread Sector5_Smoke = new ThreadTemp("Sector5/Smoke_Sensors", n_act_sect5_sprinklers, Globals Sector5_Smoke, adn, "coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE");
-		
-		SecurityThread Sector1_PIR = new ThreadTemp("Sector1/PIR", n_act_sect1_alarms, Globals Sector1_PIR, adn, "coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE");
-		SecurityThread Sector2_PIR = new ThreadTemp("Sector2/PIR", n_act_sect2_alarms, Globals Sector2_PIR, adn, "coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE");
-		SecurityThread Sector3_PIR = new ThreadTemp("Sector3/PIR", n_act_sect3_alarms, Globals Sector3_PIR, adn, "coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE");
-		SecurityThread Sector4_PIR = new ThreadTemp("Sector4/PIR", n_act_sect4_alarms, Globals Sector4_PIR, adn, "coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE");
-		SecurityThread Sector5_PIR = new ThreadTemp("Sector5/PIR", n_act_sect5_alarms, Globals Sector5_PIR, adn, "coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE");
-		
-		*/
-		
+		//While loop that checks if there are values to post to command actuators
 		while(true) {
-		adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector1/Sensor/Humid/Sensor0", Integer.toString(k));
-		k++;
-		//adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector2/Sensor/Temp/Sensor1", "8");
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			while(publishActuation.size() > 0) {
+				CI toPublish = publishActuation.get(0);
+				publishActuation.remove(0);
+				
+				adn.createContentInstance(toPublish.topic, toPublish.value);
+			}
 		}
-		}
-		
-		
 		
     }
 }

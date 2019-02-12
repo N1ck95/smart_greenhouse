@@ -1,4 +1,4 @@
-package it.unipi.iot;
+package control_app.ctrl;
 
 public class CI {
 	public String topic;
@@ -9,3 +9,4 @@ public class CI {
 		this.value = value;
 	}
 }
+

@@ -2,6 +2,8 @@ package control_app.ctrl;
 
 public class Globals {
 	
+	
+	
 	public static GlobalSharedVar Sector1_Temp = new GlobalSharedVar("Sector1/Temp");
 	public static GlobalSharedVar Sector2_Temp = new GlobalSharedVar("Sector2/Temp");
 	public static GlobalSharedVar Sector3_Temp = new GlobalSharedVar("Sector3/Temp");

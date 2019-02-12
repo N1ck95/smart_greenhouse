@@ -9,6 +9,10 @@ public class Sector {
 	public ArrayList<String> sprinklers;
 	public ArrayList<String> alarms;
 	public String sectorName;
+	public int targetTemp;
+	public int targetHumidity;
+	public int targetLight;
+	public int targetSoil;
 	
 	public Sector(String sectorName) {
 		this.sectorName = sectorName;
