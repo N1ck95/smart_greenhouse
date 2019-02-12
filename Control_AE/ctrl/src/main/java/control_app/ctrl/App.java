@@ -263,19 +263,100 @@ public class App
 									}
 									
 									
-								}else if(type.equals("humidity")) {
+								}
+								if(type.equals("humidity")) {
 									
 									for(int j = 0; j < sectors.size(); j++) {
 										if(sectors.get(j).sectorName.equals(sector)) {
 											//Info about the sector I have to control
 											this.targetValue = sectors.get(j).targetHumidity;
-											this.numActuators = sectors.get(j).irrigators.size();
-											this.controlActuator = sectors.get(j).irrigators;
+											this.numActuators = sectors.get(j).irrigators_humid.size();
+											this.controlActuator = sectors.get(j).irrigators_humid;
 											break;
 										}
 									}
 									
 									ArrayList<CI> actuation = Controls.humidityControl(val, this.targetValue, this.controlActuator);
+								
+									//add to the list of values to publish the commanded action
+									for(int j = 0; j < actuation.size(); j++) {
+										publishActuation.add(actuation.get(j));
+									}
+								
+								}
+								if(type.equals("light")) {
+									
+									for(int j = 0; j < sectors.size(); j++) {
+										if(sectors.get(j).sectorName.equals(sector)) {
+											//Info about the sector I have to control
+											this.targetValue = sectors.get(j).targetLight;
+											this.numActuators = sectors.get(j).lamps.size();
+											this.controlActuator = sectors.get(j).lamps;
+											break;
+										}
+									}
+									
+									ArrayList<CI> actuation = Controls.lightControl(val, this.targetValue, this.controlActuator);
+								
+									//add to the list of values to publish the commanded action
+									for(int j = 0; j < actuation.size(); j++) {
+										publishActuation.add(actuation.get(j));
+									}
+								
+								}
+								if(type.equals("soilm")) {
+									
+									for(int j = 0; j < sectors.size(); j++) {
+										if(sectors.get(j).sectorName.equals(sector)) {
+											//Info about the sector I have to control
+											this.targetValue = sectors.get(j).targetSoil;
+											this.numActuators = sectors.get(j).irrigators_soilm.size();
+											this.controlActuator = sectors.get(j).irrigators_soilm;
+											break;
+										}
+									}
+									
+									ArrayList<CI> actuation = Controls.lightControl(val, this.targetValue, this.controlActuator);
+								
+									//add to the list of values to publish the commanded action
+									for(int j = 0; j < actuation.size(); j++) {
+										publishActuation.add(actuation.get(j));
+									}
+								
+								}
+								if(type.equals("smoke")) {
+									
+									for(int j = 0; j < sectors.size(); j++) {
+										if(sectors.get(j).sectorName.equals(sector)) {
+											//Info about the sector I have to control
+											//this.targetValue = sectors.get(j).targetSoil; dont need a target value for the smoke
+											this.numActuators = sectors.get(j).sprinklers.size();
+											this.controlActuator = sectors.get(j).sprinklers;
+											break;
+										}
+									}
+									
+									ArrayList<CI> actuation = Controls.lightControl(val, 0, this.controlActuator);
+								
+									//add to the list of values to publish the commanded action
+									for(int j = 0; j < actuation.size(); j++) {
+										publishActuation.add(actuation.get(j));
+									}
+								
+								}
+								if(type.equals("PIR")) {
+									
+									for(int j = 0; j < sectors.size(); j++) {
+										if(sectors.get(j).sectorName.equals(sector)) {
+											//Info about the sector I have to control
+											//this.targetValue = sectors.get(j).targetSoil; dont need a target value for the pir
+											this.numActuators = sectors.get(j).alarms.size();
+											this.controlActuator = sectors.get(j).alarms;
+											break;
+										}
+									}
+									
+									ArrayList<CI> actuation = Controls.lightControl(val, 0, this.controlActuator);
 								
 									//add to the list of values to publish the commanded action
 									for(int j = 0; j < actuation.size(); j++) {
