@@ -23,5 +23,7 @@ public class Sector {
 		lamps = new ArrayList<String>();
 		sprinklers = new ArrayList<String>();
 		alarms = new ArrayList<String>();
+		
+		
 	}
 }

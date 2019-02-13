@@ -321,7 +321,7 @@ public class App
 										}
 									}
 									
-									ArrayList<CI> actuation = Controls.lightControl(val, this.targetValue, this.controlActuator);
+									ArrayList<CI> actuation = Controls.soilmControl(val, this.targetValue, this.controlActuator);
 								
 									//add to the list of values to publish the commanded action
 									for(int j = 0; j < actuation.size(); j++) {

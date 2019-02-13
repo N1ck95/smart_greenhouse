@@ -9,26 +9,50 @@ public class Controls {
 		//TODO: insert temperature control
 		//body of thread
 		int k = 0;
+		int m = 0;
 		int j = 0;
 		int difference = 0;
+		int meta = actuators.size()/2;
+		m = meta;
 		ArrayList<CI> turn_on_act = new ArrayList<CI>();
 		difference = val - targetValue;
 		if (val>targetValue) {
-			if (difference > 5) {
-				if (k < actuators.size()) {
+			if (difference > 0) {
+				if (k < meta) {
 					turn_on_act.add(new CI(actuators.get(k),"1"));
 					k++;
 				}
 			}
 			if (difference > 10) {
-				if (k < actuators.size()) {
+				if (k < meta) {
 					turn_on_act.add(new CI(actuators.get(k),"1"));
 					k++;
 				}
 			}
 			if (difference > 20) {
-				if (k < actuators.size()) {
-					for(j = k; j<actuators.size(); j++) {
+				if (k < meta) {
+					for(j = k; j<meta; j++) {
+						turn_on_act.add(new CI(actuators.get(j),"1"));
+					}
+				}
+			}
+		}else
+		if (val<targetValue) {
+			if (difference < 0) {
+				if (m < actuators.size()) {
+					turn_on_act.add(new CI(actuators.get(m),"1"));
+					m++;
+				}
+			}
+			if (difference < -10) {
+				if (m < actuators.size()) {
+					turn_on_act.add(new CI(actuators.get(m),"1"));
+					m++;
+				}
+			}
+			if (difference < -20) {
+				if (m < actuators.size()) {
+					for(j = m; j<actuators.size(); j++) {
 						turn_on_act.add(new CI(actuators.get(j),"1"));
 					}
 				}
@@ -44,6 +68,9 @@ public class Controls {
 	}
 	
 	public static ArrayList<CI> humidityControl(int val, int targetValue, ArrayList<String> actuators) {
+		return Controls.temperatureControl(val, targetValue, actuators);
+	}
+	public static ArrayList<CI> soilmControl(int val, int targetValue, ArrayList<String> actuators) {
 		return Controls.temperatureControl(val, targetValue, actuators);
 	}
 	public static ArrayList<CI> lightControl(int val, int targetValue, ArrayList<String> actuators) {
