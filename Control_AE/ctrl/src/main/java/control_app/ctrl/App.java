@@ -62,7 +62,7 @@ public class App
     {
     	App ctrl_app = new App();
     	
-    	AE_Control adn = new AE_Control();
+    	final AE_Control adn = new AE_Control();
     	//create applications entities for control and security
 		AE ae = adn.createAE_Control("coap://127.0.0.1:5683/~/" + middle_id, "ControlApp-ID", "Control_AE");
 		//AE ae_security = adn.createAE_Control("coap://127.0.0.1:5683/~/mn-cse", "SecurityApp-ID", "Security_AE");
@@ -182,8 +182,10 @@ public class App
 					//Actuator belongs to this sector
 					if(type.equals("fan")) {
 						sectors.get(i).fans.add(actuators_paths_mn.get(j));
-					}else if(type.equals("irrigator")) {
-						sectors.get(i).irrigators.add(actuators_paths_mn.get(j));
+					}else if(type.equals("irrigator_soilm")) {
+						sectors.get(i).irrigators_soilm.add(actuators_paths_mn.get(j));
+					}else if(type.equals("irrigator_humid")) {
+						sectors.get(i).irrigators_humid.add(actuators_paths_mn.get(j));
 					}else if(type.equals("lamp")) {
 						sectors.get(i).lamps.add(actuators_paths_mn.get(j));
 					}else if(type.equals("sprinkler")) {
@@ -193,6 +195,9 @@ public class App
 					}
 				}
 			}
+			//create movement status containers in the security ae 
+			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Security_AE/", sectors.get(i).sectorName);
+			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Security_AE/" + sectors.get(i)+ "/", "MovementAlarmStatus");
 		}
 				
 		//String monitor_port = "coap://127.0.0.1:5685/";
@@ -352,6 +357,8 @@ public class App
 											//this.targetValue = sectors.get(j).targetSoil; dont need a target value for the pir
 											this.numActuators = sectors.get(j).alarms.size();
 											this.controlActuator = sectors.get(j).alarms;
+											//fill the corresponding movement status container
+											adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Security_AE/" + sector + "/MovementAlarmStatus", Integer.toString(val));
 											break;
 										}
 									}
