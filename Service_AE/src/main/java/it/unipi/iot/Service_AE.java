@@ -34,7 +34,8 @@ public class Service_AE extends CoapServer{
 	final static String middle_id = "niccolo-mn-cse";		//Middle node id
 	final static String middle_name = "niccolo-mn-name";	//Middle node name
 	final static int BROKER_PORT = 6001;
-	final static String broker_uri = "coap://127.0.0.1:" + String.valueOf(BROKER_PORT);			//Broker ip
+	//final static String broker_uri = "coap://127.0.0.1:" + String.valueOf(BROKER_PORT);			//Broker ip
+	final static String broker_uri = "coap://[fd00::2]:" + String.valueOf(BROKER_PORT);			//Broker ip
 	final static String AE_ID = "Service_AE_ID";			//Id of the Application Entity
 	final static String AE_name = "Service_AE";				//Name of the Application Entity
 	final static int PORT = 6000;							//Port of this AE
