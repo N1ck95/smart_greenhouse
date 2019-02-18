@@ -37,6 +37,7 @@ public class App
 	final static String middle_id = "niccolo-mn-cse";		//Middle node id
 	final static String middle_name = "niccolo-mn-name";	//Middle node name
 	final static String AE_name = "Control_AE";				//Name of the Application Entity
+	final static String localServerAddr = "coap://127.0.0.1:5685/";	//IP and port of the local server to receive notifications
 	
 	public void createSubscription(String cse, String ResourceName, String notificationUrl){
 		CoapClient client = new CoapClient(cse);
@@ -58,9 +59,11 @@ public class App
 		System.out.println(response);
 				
 	}
+	
     public static void main( String[] args )
     {
     	App ctrl_app = new App();
+    	CoapServer server = new CoapServer(5685);
     	
     	final AE_Control adn = new AE_Control();
     	//create applications entities for control and security
@@ -97,7 +100,13 @@ public class App
 		//the service_ae is created by niccolo, i dont create it, i just do a discovery of its resources
 		//the argument in the discovery should be just the port of the middle node without the service_ae or with it?
 		//perform the discovery
-		discovery = adn.Discovery("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Service_AE");//this is the port of the middle node?
+		try {
+			discovery = adn.Discovery("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Service_AE");//this is the port of the middle node?
+		}catch(Exception e) {
+			System.err.println("[ERROR] " + e);
+			System.out.println("[INFO] Terminating program");
+			System.exit(1);
+		}
 		System.out.println(discovery.get(0));
 		num_resources_mn = discovery.size();
 		System.out.println(num_resources_mn);
@@ -112,10 +121,9 @@ public class App
 				actuators_paths_mn.add(pom);
 			}
 		}
-		//System.out.println(resources_paths_mn.get(0));
-		//System.out.println(resources_paths_mn.get(1));
+
 		num_resources_mn = resources_paths_mn.size();
-		System.out.println(num_resources_mn);
+		System.out.println("[DEBUG] discovered devices" + num_resources_mn);
 		
 		//find the number of sectors
 		final ArrayList<Sector> sectors = new ArrayList<Sector>();
@@ -148,32 +156,93 @@ public class App
 			System.out.println("Enter the target temp for sector " + sectors.get(i));
 			target = reader.next();
 			target_temp.add(target);
+			//Create resource to receive notifications about target temperature changes
+			server.add(new CoapResource(sectors.get(i).sectorName).add(new CoapResource("targetTemperature") {
+				
+				public void handlePOST(CoapExchange exchange) {
+					for(int i=0; i < sectors.size(); i++) {
+						if(sectors.get(i).sectorName.equals(this.getParent().getName())) {
+							//Update target temperature of the correct sector
+							sectors.get(i).targetTemp = Integer.parseInt(exchange.getRequestText());
+						}
+					}
+				}
+				
+			}));
 			
 			System.out.println("Enter the target humidity for sector " + sectors.get(i));
 			target = reader.next();
 			target_humid.add(target);
+			//Create resource to receive notifications about target humidity changes
+			server.add(new CoapResource(sectors.get(i).sectorName).add(new CoapResource("targetHumidity") {
+				
+				public void handlePOST(CoapExchange exchange) {
+					for(int i=0; i < sectors.size(); i++) {
+						if(sectors.get(i).sectorName.equals(this.getParent().getName())) {
+							//Update target humidity of the correct sector
+							sectors.get(i).targetHumidity = Integer.parseInt(exchange.getRequestText());
+						}
+					}
+				}
+				
+			}));
+			
 			
 			System.out.println("Enter the target light for sector " + sectors.get(i));
 			target = reader.next();
 			target_light.add(target);
+			//Create resource to receive notifications about target light changes
+			server.add(new CoapResource(sectors.get(i).sectorName).add(new CoapResource("targetLight") {
+				
+				public void handlePOST(CoapExchange exchange) {
+					for(int i=0; i < sectors.size(); i++) {
+						if(sectors.get(i).sectorName.equals(this.getParent().getName())) {
+							//Update target light of the correct sector
+							sectors.get(i).targetLight = Integer.parseInt(exchange.getRequestText());
+						}
+					}
+				}
+				
+			}));
+			
 			
 			System.out.println("Enter the target soil moisture for sector " + sectors.get(i));
 			target = reader.next();
 			target_soilmoist.add(target);
+			//Create resource to receive notifications about target light changes
+			server.add(new CoapResource(sectors.get(i).sectorName).add(new CoapResource("targetSoil") {
+				
+				public void handlePOST(CoapExchange exchange) {
+					for(int i=0; i < sectors.size(); i++) {
+						if(sectors.get(i).sectorName.equals(this.getParent().getName())) {
+							//Update target temperature of the correct sector
+							sectors.get(i).targetSoil = Integer.parseInt(exchange.getRequestText());
+						}
+					}
+				}
+				
+			}));
+			
 		}
-		
 		reader.close();
+				
 		for (i = 0; i< num_sectors ;i++) {
-			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE", sectors.get(i).sectorName);
-			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i), "TargetTemp");
-			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i) + "/TargetTemp", target_temp.get(i));
-			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i), "TargetHumid");
-			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i) + "/TargetHumid", target_humid.get(i));
-			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i), "TargetLight");
-			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i) + "/TargetLight", target_light.get(i));
-			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i), "TargetSoilMoist");
-			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Control_AE/" + sectors.get(i) + "/TargetSoilMoist", target_soilmoist.get(i));
+			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name, sectors.get(i).sectorName);
+			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName, "TargetTemp");
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName + "/TargetTemp", target_temp.get(i));
+			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName, "TargetHumid");
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName + "/TargetHumid", target_humid.get(i));
+			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName, "TargetLight");
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName + "/TargetLight", target_light.get(i));
+			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName, "TargetSoilMoist");
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName + "/TargetSoilMoist", target_soilmoist.get(i));
 		
+			ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetTemp", "targetTempMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetTemperature");
+			ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetHumid", "targetHumMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetHumidity");
+			ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetLight", "targetLightMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetLight");
+			ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetSoilMoist", "targetSoilMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetSoil");
+			
+			
 			for(int j = 0; j < actuators_paths_mn.size(); j++) {
 				String[] sub = actuators_paths_mn.get(j).split("/");
 				String sector = sub[0];
@@ -195,25 +264,18 @@ public class App
 					}
 				}
 			}
+			
 			//create movement status containers in the security ae 
-			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Security_AE/", sectors.get(i).sectorName);
-			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Security_AE/" + sectors.get(i)+ "/", "MovementAlarmStatus");
+			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Security_AE", sectors.get(i).sectorName);
+			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Security_AE" + sectors.get(i)+ "/", "MovementAlarmStatus");
 		}
-				
-		//String monitor_port = "coap://127.0.0.1:5685/";
-		//Server_Class monitor = new Server_Class();
+		System.out.println("[INFO] local target and status containers setup completed");
 		
 		final ArrayList<CI> publishActuation = new ArrayList<CI>();
 		
-		CoapServer server = new CoapServer(5685);
-		
-		//List <Resource> resources_monitor;
 		for(i = 0; i< num_resources_mn; i++) {
 			//first create the resource in the monitor
-			//should the resource name be "monitor/" + resources_paths_mn[i] or just resources_paths_mn[i]?
-			//monitor.addResource(resources_paths_mn[i]);
-			
-			//monitor.addResource(resources_paths_mn.get(i));
+			//resource name is the one of the subscribed resource path
 			
 			String[] parts = resources_paths_mn.get(i).split("/");
 			String sector = parts[0];
@@ -223,9 +285,9 @@ public class App
 			    	String path_resource = exchange.getRequestOptions().getUriPathString();//in the case of the lab04 exercise this returns the path of the resource in the coap server(monitor)
 			    	//in fact it returned monitor because we only had one resource whose name was monitor
 			    	//this is also the name of the resource right? yes
-			    	System.out.println(path_resource);//the path of the resource i could have gotten by this.name,right?
-			    	System.out.println(exchange.getRequestText());
-			        System.out.println("received notific");
+			    	//System.out.println(path_resource);//the path of the resource i could have gotten by this.name,right?
+			    	//System.out.println(exchange.getRequestText());
+			        System.out.println("[INFO] received notification of update for device " + this.getName());
 
 			        //get info about the sector
 			        
@@ -393,7 +455,6 @@ public class App
 		}
 		
 		server.start();
-		//monitor.start();
 		
 		//Subscribe to the sensors to receive updates
 		for(i = 0; i< num_resources_mn; i++) {
