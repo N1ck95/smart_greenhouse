@@ -22,6 +22,7 @@ public class RootResource extends CoapResource{
 	
 	public RootResource(String name) {
 		super(name);
+		this.setObservable(true);
 		
 		loadAssociation();
 		
