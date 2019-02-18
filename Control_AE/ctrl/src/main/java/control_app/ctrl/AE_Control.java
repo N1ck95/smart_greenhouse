@@ -181,7 +181,7 @@ public class AE_Control {
 		    	//System.out.println(subpaths.length);
 		    	if(subpaths.length == 8) {
 		    		//Is a full path to a sensor
-		    		System.out.println(subpaths[0]);
+		    		//System.out.println(subpaths[0]);
 		    		String cleaned = paths.getString(i).replace("/" + subpaths[1] + "/" + subpaths[2] + "/" + subpaths[3] + "/", "");
 		    		System.out.println("DEBUG: cleaned = " + cleaned);
 		    		final_paths.add(cleaned);

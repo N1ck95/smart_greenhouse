@@ -39,7 +39,7 @@ public class App
 	final static String AE_name = "Control_AE";				//Name of the Application Entity
 	final static String localServerAddr = "coap://127.0.0.1:5685/";	//IP and port of the local server to receive notifications
 	
-	public void createSubscription(String cse, String ResourceName, String notificationUrl){
+	public void createSubscription(String cse, String ResourceName, String notificationUrl) throws Exception{
 		CoapClient client = new CoapClient(cse);
 		Request req = Request.newPost();
 		req.getOptions().addOption(new Option(267, 23));
@@ -55,13 +55,15 @@ public class App
 		String body = root.toString();
 		req.setPayload(body);
 		CoapResponse responseBody = client.advanced(req);
+		if(responseBody == null) {
+			throw new Exception("Request timeout");
+		}
 		String response = new String(responseBody.getPayload());
 		System.out.println(response);
 				
 	}
 	
-    public static void main( String[] args )
-    {
+    public static void main( String[] args ) throws InterruptedException{
     	App ctrl_app = new App();
     	CoapServer server = new CoapServer(5685);
     	
@@ -107,13 +109,14 @@ public class App
 			System.out.println("[INFO] Terminating program");
 			System.exit(1);
 		}
+		
 		System.out.println(discovery.get(0));
 		num_resources_mn = discovery.size();
-		System.out.println(num_resources_mn);
+		System.out.println("[DEBUG] num of resources: " + num_resources_mn);
 		String pom;
 		//exclude the actuators from the list returned by the discovery
 		for (i = 0; i< num_resources_mn; i++) {
-			if (discovery.get(i).contains("Sensor")) {
+			if (discovery.get(i).contains("sensor")) {
 				pom = discovery.get(i);
 				resources_paths_mn.add(pom);
 			}else {
@@ -123,7 +126,7 @@ public class App
 		}
 
 		num_resources_mn = resources_paths_mn.size();
-		System.out.println("[DEBUG] discovered devices" + num_resources_mn);
+		System.out.println("[DEBUG] discovered devices: " + num_resources_mn);
 		
 		//find the number of sectors
 		final ArrayList<Sector> sectors = new ArrayList<Sector>();
@@ -134,6 +137,8 @@ public class App
 				sectors.add(new Sector(subpaths[3]));
 			}
 		}
+		
+		System.out.println("[INFO] number of sectors: " + sectors.size());
 		
 		//Container control_app_cont = new Container();
 		//control_app_cont = adn.createContainer("coap://127.0.0.1:5684/~/mn-cse/mn-name/Control_AE");
@@ -237,10 +242,26 @@ public class App
 			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName, "TargetSoilMoist");
 			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName + "/TargetSoilMoist", target_soilmoist.get(i));
 		
-			ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetTemp", "targetTempMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetTemperature");
-			ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetHumid", "targetHumMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetHumidity");
-			ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetLight", "targetLightMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetLight");
-			ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetSoilMoist", "targetSoilMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetSoil");
+			try {
+				ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetTemp", "targetTempMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetTemperature");
+			} catch (Exception e) {
+				System.err.println("[ERROR] Fail to subscribe to TargetTemperature: " + e.getMessage());
+			}
+			try {
+				ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetHumid", "targetHumMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetHumidity");
+			} catch (Exception e) {
+				System.err.println("[ERROR] Fail to subscribe to TargetHumidity: " + e.getMessage());
+			}
+			try {
+				ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetLight", "targetLightMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetLight");
+			} catch (Exception e) {
+				System.err.println("[ERROR] Fail to subscribe to TargetLight: " + e.getMessage());
+			}
+			try {
+				ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetSoilMoist", "targetSoilMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetSoil");
+			} catch (Exception e) {
+				System.err.println("[ERROR] Fail to subscribe to TargetSoil: " + e.getMessage());
+			}
 			
 			
 			for(int j = 0; j < actuators_paths_mn.size(); j++) {
@@ -267,8 +288,8 @@ public class App
 			
 			//create movement status containers in the security ae 
 			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Security_AE", sectors.get(i).sectorName);
-			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Security_AE" + sectors.get(i)+ "/", "MovementAlarmStatus");
-			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Security_AE" + sectors.get(i)+ "/", "FireAlarmStatus");
+			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Security_AE" + sectors.get(i).sectorName + "/", "MovementAlarmStatus");
+			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Security_AE" + sectors.get(i).sectorName + "/", "FireAlarmStatus");
 		}
 		System.out.println("[INFO] local target and status containers setup completed");
 		
@@ -460,9 +481,13 @@ public class App
 		
 		//Subscribe to the sensors to receive updates
 		for(i = 0; i< num_resources_mn; i++) {
-			System.out.println(resources_paths_mn.get(i));
-			ctrl_app.createSubscription("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/" + resources_paths_mn.get(i),
-			resources_paths_mn.get(i).replaceAll("/", "_"), "coap://127.0.0.1:5685/" + resources_paths_mn.get(i));
+			System.out.println("[DEBUG] subscribe to: " + resources_paths_mn.get(i));
+			try {
+				ctrl_app.createSubscription("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/" + resources_paths_mn.get(i),
+				resources_paths_mn.get(i).replaceAll("/", "_"), "coap://127.0.0.1:5685/" + resources_paths_mn.get(i));
+			} catch (Exception e) {
+				System.err.println("[ERROR] fail to subscribe to " + resources_paths_mn.get(i) + " Error: " + e.getMessage());
+			}
 		}	
 		
 		//While loop that checks if there are values to post to command actuators
@@ -473,6 +498,10 @@ public class App
 				
 				adn.createContentInstance(toPublish.topic, toPublish.value);
 			}
+			
+			//Publish content instance to test the system
+			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/" + resources_paths_mn.get(0), "15");
+			Thread.sleep(500);	//Sleep for half second to avoid wasting resources
 		}
 		
     }
