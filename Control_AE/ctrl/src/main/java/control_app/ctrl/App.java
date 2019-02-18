@@ -198,6 +198,7 @@ public class App
 			//create movement status containers in the security ae 
 			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Security_AE/", sectors.get(i).sectorName);
 			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Security_AE/" + sectors.get(i)+ "/", "MovementAlarmStatus");
+			adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Security_AE/" + sectors.get(i)+ "/", "FireAlarmStatus");
 		}
 				
 		//String monitor_port = "coap://127.0.0.1:5685/";
@@ -337,11 +338,12 @@ public class App
 											//this.targetValue = sectors.get(j).targetSoil; dont need a target value for the smoke
 											this.numActuators = sectors.get(j).sprinklers.size();
 											this.controlActuator = sectors.get(j).sprinklers;
+											adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Security_AE/" + sector + "/FireAlarmStatus", Integer.toString(val));
 											break;
 										}
 									}
 									
-									ArrayList<CI> actuation = Controls.lightControl(val, 0, this.controlActuator);
+									ArrayList<CI> actuation = Controls.smokeControl(val, 0, this.controlActuator);
 								
 									//add to the list of values to publish the commanded action
 									for(int j = 0; j < actuation.size(); j++) {
@@ -363,7 +365,7 @@ public class App
 										}
 									}
 									
-									ArrayList<CI> actuation = Controls.lightControl(val, 0, this.controlActuator);
+									ArrayList<CI> actuation = Controls.movementControl(val, 0, this.controlActuator);
 								
 									//add to the list of values to publish the commanded action
 									for(int j = 0; j < actuation.size(); j++) {
