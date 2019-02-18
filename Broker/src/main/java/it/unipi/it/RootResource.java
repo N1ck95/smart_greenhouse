@@ -31,8 +31,9 @@ public class RootResource extends CoapResource{
 		this.add(new TopicResource("Service_AE/Sector3/actuator/irrigator/TJ8XG95", MediaTypeRegistry.TEXT_PLAIN));
 		TopicResource Pippo = new TopicResource("pippo", MediaTypeRegistry.APPLICATION_JSON)
 		this.add(Pippo);*/
-		this.add(new CoapResource("Service_AE").add(new CoapResource("Sector1").add(new CoapResource("sensor").add(new CoapResource("humidity").add(new TopicResource("AY5CS34", MediaTypeRegistry.TEXT_PLAIN))))));
+		//this.add(new CoapResource("Service_AE").add(new CoapResource("Sector1").add(new CoapResource("sensor").add(new CoapResource("humidity").add(new TopicResource("AY5CS34", MediaTypeRegistry.TEXT_PLAIN))))));
 		this.add(new CoapResource("Service_AE").add(new CoapResource("Sector2").add(new CoapResource("actuator").add(new CoapResource("irrigator").add(new TopicResource("TJ8XG95", MediaTypeRegistry.TEXT_PLAIN))))));
+		this.getChild("Service_AE").add(new CoapResource("Sector1").add(new CoapResource("sensor").add(new CoapResource("humidity").add(new TopicResource("AY5CS34", MediaTypeRegistry.TEXT_PLAIN)))));
 	}
 	
 	private void loadAssociation() {
@@ -102,17 +103,22 @@ public class RootResource extends CoapResource{
 			//topic to receive/send notifications from/to device
 			boolean created = false;
 			Resource res = this;
+			Resource parent = this;
+			System.out.println("[DEBUG] requested topic: " + topic);
 			for(int i = 0; i < path.length; i++) {
+				parent = res;
 				Iterator<Resource> childrens = res.getChildren().iterator();
 				while(childrens.hasNext()) {
 					Resource child = childrens.next();
 					if(child.getName().equals(path[i])) {
 						res = child;
-						break;
+						System.out.println("[DEBUG] subpath exists: " + child.getName());
 					}
 				}
-				if(res == this) {
+				
+				if(res == parent) {
 					//resource does not exists
+					System.out.println("[DEBUG] subpath not exist: " + path[i]);
 					Resource tmp;
 					if(i == (path.length - 1)) {
 						//The topic to create is the MAC
