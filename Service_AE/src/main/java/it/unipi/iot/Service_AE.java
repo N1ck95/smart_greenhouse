@@ -31,8 +31,8 @@ import org.xml.sax.SAXException;
 
 public class Service_AE extends CoapServer{
 	final static String middle_ip = "127.0.0.1";			//Middle node ip
-	final static String middle_id = "niccolo-mn-cse";		//Middle node id
-	final static String middle_name = "niccolo-mn-name";	//Middle node name
+	final static String middle_id = "mn-cse";		//Middle node id
+	final static String middle_name = "mn-name";	//Middle node name
 	final static int BROKER_PORT = 6001;
 	//final static String broker_uri = "coap://127.0.0.1:" + String.valueOf(BROKER_PORT);			//Broker ip
 	final static String broker_uri = "coap://[fd00::2]:" + String.valueOf(BROKER_PORT);			//Broker ip
@@ -41,12 +41,14 @@ public class Service_AE extends CoapServer{
 	final static int PORT = 6000;							//Port of this AE
 	
 	public static void main(String[] args) throws InterruptedException {
-		final BrokerCoAP broker = new BrokerCoAP(broker_uri, BROKER_PORT);
+		final BrokerCoAP broker = new BrokerCoAP(broker_uri);
 		//Tree devices = new Tree("Service_AE");
 		final OneM2M middle_node = new OneM2M(middle_ip, middle_id, middle_name);	//To interact with middle_node
 		final Service_AE server = new Service_AE();
 		server.addEndpoint(new CoapEndpoint(new InetSocketAddress(PORT)));
 		server.start();
+		
+		System.out.println("[INFO] Server started");
 		
 		final Semaphore topic_sem = new Semaphore(1);
 		final ArrayList<Topic> newTopics = new ArrayList<Topic>();
@@ -61,7 +63,7 @@ public class Service_AE extends CoapServer{
 			System.err.println(e.getMessage());
 		}
 		
-		System.out.println("Subscribing to broker");
+		System.out.println("[INFO] Subscribing to broker");
 			CoapClient client = new CoapClient(broker_uri + "/ps");	//Subscribe to have notifications about topics
 			@SuppressWarnings("unused")
 			CoapObserveRelation relation = client.observeAndWait(
@@ -86,7 +88,7 @@ public class Service_AE extends CoapServer{
 									Topic topic = new Topic(obj.getString("topic"), obj.getInt("cf"));
 									//String topic = obj.getString("topic");	//Path of the topic
 									//int cf = obj.getInt("cf");	//Content format of the topic
-									System.out.println(topic.topic);
+									//System.out.println(topic.topic);
 									
 									newTopics.add(topic);	//Is a shared variable
 								}
@@ -96,7 +98,7 @@ public class Service_AE extends CoapServer{
 						}
 				
 						public void onError() {
-							System.err.println("Response error");
+							System.err.println("[ERROR] Response error on observe relation with /ps");
 						}
 					}	
 			);
@@ -123,32 +125,32 @@ public class Service_AE extends CoapServer{
 						try {
 							middle_node.createContainer(AE_name, sector);	//create the Sector container
 						}catch(Exception e) {
-							System.err.println("Error creating sector container: " + e);
+							System.err.println("[ERROR] Failure creating sector container: " + e);
 						}
 						
 						try {
 							middle_node.createContainer(AE_name + "/" + sector, type);	//Create the type container
 						}catch(Exception e) {
-							System.err.println("Error creating type container: " + e);
+							System.err.println("[ERROR] Failure creating type container: " + e);
 						}
 						
 						try {
 							middle_node.createContainer(AE_name + "/" + sector + "/" + type, model);
 						}catch(Exception e) {
-							System.err.println("Error creating model container: " + e);
+							System.err.println("[ERROR] Failure creating model container: " + e);
 						}
 						
 						try {
 							middle_node.createContainer(AE_name + "/" + sector + "/" + type + "/" + model, MAC);	//create the device container
 						}catch(Exception e) {
-							System.err.println("Error creating MAC container: " + e);
+							System.err.println("[ERROR] Failure creating MAC container: " + e);
 						}
 						
 						if(type.equals("sensor")) {
 							//devices.addSensor(MAC, sector);	//TODO: check if can be avoided
 							//Is a sensor --> I also have to subscribe to this topic
-							CoapClient sensorClient = new CoapClient(broker_uri + "/ps/" + topic);
-							System.out.println("Observing: " + broker_uri + "/ps/" + topic);
+							CoapClient sensorClient = new CoapClient(broker_uri + "/ps/" + topic.topic);
+							System.out.println("[INFO] Observing: " + broker_uri + "/ps/" + topic.topic);
 							Request req = new Request(Code.GET);
 							req.getOptions().setAccept(MediaTypeRegistry.TEXT_PLAIN);
 							req.setObserve();
@@ -162,19 +164,19 @@ public class Service_AE extends CoapServer{
 										String content = response.getResponseText();
 										if(response.getCode() == ResponseCode.CONTENT) {
 											//Update corresponding container with the retrieved content
-											System.out.println("Update received for topic " + this.topic + " value: " + content);
+											System.out.println("[INFO] Update received for topic " + this.topic + " value: " + content);
 											
 											publishSensor.add(new CI(topic, content));
 										}else {
-											System.out.println("Response from observing sensor: " + response.getCode());
+											System.out.println("[WARN] Response from observing sensor: " + response.getCode());
 										}
 									}
 									
 									public void onError() {
-										System.err.println("Error on observing topic " + this.topic);
+										System.err.println("[ERROR] Error on observing topic " + this.topic);
 									}
 								});
-							System.out.println("Created observing relation with sensor");
+							System.out.println("[INFO] Created observing relation with " + model + " sensor " + MAC);
 						}else {
 							//devices.addActuator(MAC, sector);	//Todo: check if can be avoided
 							//Is an actuator --> subscribe to the container just created

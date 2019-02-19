@@ -82,8 +82,8 @@ public class OneM2M {
 	
 	public void publishContentInstance(String path, String value) {
 		CoapClient client = new CoapClient(this.node_ip + "/~/" + this.node_id + "/" + this.node_name + "/" + path);
-		System.out.println("Value to publish on MN: " + value);
-		System.out.println("Publish on: " + path);
+		//System.out.println("Value to publish on MN: " + value);
+		//System.out.println("Publish on: " + path);
 		
 		//Create the new payload
 		JSONObject payload = new JSONObject();
@@ -103,8 +103,11 @@ public class OneM2M {
 		request.setPayload(payload.toString());	//Set the payload as String
 		
 		CoapResponse response = client.advanced(request);
+		if(response.isSuccess()) {
+			//Successfull
+		}
 		
-		System.out.println("Response: " +response.getResponseText());
+		//System.out.println("Response: " +response.getResponseText());
 	}
 	
 	public void subscribe(String path, String serverPort, String resource) {
@@ -120,16 +123,18 @@ public class OneM2M {
 		
 		obj.put("rn", "Monitor");
 		obj.put("nu", "coap://" + this.node_ip + ":" + serverPort + "/" + resource);
-		System.out.println("Subscribe relation resource: " + resource);
+		//System.out.println("Subscribe relation resource: " + resource);
 		obj.put("nct", 2);
 		payload.put("m2m:sub", obj);
 		
 		request.setPayload(payload.toString());
-		System.out.println(payload.toString());
+		//System.out.println(payload.toString());
 		
 		CoapResponse resp = client.advanced(request);
-		
+		if(resp.isSuccess()) {
+			//Successful subscribe
+		}
 		//TODO: add check on the response
-		System.out.println(resp.getResponseText());
+		//System.out.println(resp.getResponseText());
 	}
 }

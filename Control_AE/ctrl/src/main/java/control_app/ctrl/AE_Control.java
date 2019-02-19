@@ -124,7 +124,7 @@ public class AE_Control {
 	    JSONObject root = new JSONObject();
 	    root.put("m2m:cin", content);
 	    String body = root.toString();
-	    System.out.println(body);
+	    //System.out.println(body);
 	    req.setPayload(body);
 	    CoapResponse responseBody = client.advanced(req);
 	    //the payload needs always to be a string
@@ -172,17 +172,17 @@ public class AE_Control {
 		    ArrayList<String> final_paths = new ArrayList<String>();
 	
 		    JSONObject jsonPayload = new JSONObject(response);
-		    JSONArray paths = jsonPayload.getJSONArray("m2m:uril");
+		    String[] paths = jsonPayload.getString("m2m:uril").split(" ");
 		    
-		    System.out.println("[DEBUG] number of elements in discovery: " + paths.length());
+		    System.out.println("[DEBUG] number of elements in discovery: " + paths.length);
 		    
-		    for(int i = 0; i < paths.length(); i++) {
-		    	String[] subpaths = paths.get(i).toString().split("/");
+		    for(int i = 0; i < paths.length; i++) {
+		    	String[] subpaths = paths[i].toString().split("/");
 		    	//System.out.println(subpaths.length);
 		    	if(subpaths.length == 8) {
 		    		//Is a full path to a sensor
 		    		//System.out.println(subpaths[0]);
-		    		String cleaned = paths.getString(i).replace("/" + subpaths[1] + "/" + subpaths[2] + "/" + subpaths[3] + "/", "");
+		    		String cleaned = paths[i].replace("/" + subpaths[1] + "/" + subpaths[2] + "/" + subpaths[3] + "/", "");
 		    		System.out.println("DEBUG: cleaned = " + cleaned);
 		    		final_paths.add(cleaned);
 		    	}

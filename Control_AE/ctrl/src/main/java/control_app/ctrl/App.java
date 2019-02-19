@@ -34,8 +34,8 @@ import javax.xml.parsers.ParserConfigurationException;
 public class App 
 {
 	final static String middle_ip = "127.0.0.1";			//Middle node ip
-	final static String middle_id = "niccolo-mn-cse";		//Middle node id
-	final static String middle_name = "niccolo-mn-name";	//Middle node name
+	final static String middle_id = "mn-cse";		//Middle node id
+	final static String middle_name = "mn-name";	//Middle node name
 	final static String AE_name = "Control_AE";				//Name of the Application Entity
 	final static String localServerAddr = "coap://127.0.0.1:5685/";	//IP and port of the local server to receive notifications
 	
@@ -59,7 +59,7 @@ public class App
 			throw new Exception("Request timeout");
 		}
 		String response = new String(responseBody.getPayload());
-		System.out.println(response);
+		System.out.println("[DEBUG] response from subscription: " + response + " . For cse requested: " + cse);
 				
 	}
 	
@@ -243,26 +243,32 @@ public class App
 			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName + "/TargetSoilMoist", target_soilmoist.get(i));
 		
 			try {
-				ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetTemp", "targetTempMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetTemperature");
+				ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetTemp", "TargetTemp", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetTemperature");
 			} catch (Exception e) {
 				System.err.println("[ERROR] Fail to subscribe to TargetTemperature: " + e.getMessage());
 			}
 			try {
-				ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetHumid", "targetHumMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetHumidity");
+				ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetHumid", "TargetHumid", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetHumidity");
 			} catch (Exception e) {
 				System.err.println("[ERROR] Fail to subscribe to TargetHumidity: " + e.getMessage());
 			}
 			try {
-				ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetLight", "targetLightMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetLight");
+				ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetLight", "TargetLight", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetLight");
 			} catch (Exception e) {
 				System.err.println("[ERROR] Fail to subscribe to TargetLight: " + e.getMessage());
 			}
 			try {
-				ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetSoilMoist", "targetSoilMonitor", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetSoil");
+				ctrl_app.createSubscription("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/TargetSoilMoist", "TargetSoilMoist", "coap://127.0.0.1:5685/" + sectors.get(i).sectorName + "targetSoil");
 			} catch (Exception e) {
 				System.err.println("[ERROR] Fail to subscribe to TargetSoil: " + e.getMessage());
 			}
 			
+			sectors.get(i).fans = new ArrayList<String>();
+			sectors.get(i).irrigators_soilm = new ArrayList<String>();
+			sectors.get(i).irrigators_humid = new ArrayList<String>();
+			sectors.get(i).lamps = new ArrayList<String>();
+			sectors.get(i).sprinklers = new ArrayList<String>();
+			sectors.get(i).alarms = new ArrayList<String>();
 			
 			for(int j = 0; j < actuators_paths_mn.size(); j++) {
 				String[] sub = actuators_paths_mn.get(j).split("/");
@@ -324,9 +330,7 @@ public class App
 							if (item_list.getLength() ==1) {
 								Node p = item_list.item(0);
 								Element con = (Element) p;
-								System.out.println(con.getTextContent());
 								val = Integer.parseInt(con.getTextContent());
-								System.out.println("[INFO] valore e "+val);
 								
 								String[] subpaths = path_resource.split("/");
 								String sector = subpaths[0];
@@ -344,13 +348,17 @@ public class App
 										}
 									}
 									
-									ArrayList<CI> actuation = Controls.temperatureControl(val, this.targetValue, this.controlActuator);
-									
-									//Add to the list of values to publish the commanded action
-									for(int j = 0; j < actuation.size(); j++) {
-										publishActuation.add(actuation.get(j));
+									if(this.controlActuator == null) {
+										//No actuators to control available
+										System.out.println("[WARN] unable to control temperature in " + sector + ": no fans available");
+									}else {
+										ArrayList<CI> actuation = Controls.temperatureControl(val, this.targetValue, this.controlActuator);
+										
+										//Add to the list of values to publish the commanded action
+										for(int j = 0; j < actuation.size(); j++) {
+											publishActuation.add(actuation.get(j));
+										}
 									}
-									
 									
 								}
 								if(type.equals("humidity")) {
@@ -365,11 +373,16 @@ public class App
 										}
 									}
 									
-									ArrayList<CI> actuation = Controls.humidityControl(val, this.targetValue, this.controlActuator);
-								
-									//add to the list of values to publish the commanded action
-									for(int j = 0; j < actuation.size(); j++) {
-										publishActuation.add(actuation.get(j));
+									if(this.controlActuator == null) {
+										//No actuators to control available
+										System.out.println("[WARN] unable to control humidity in " + sector + ": no irrigators available");
+									}else {
+										ArrayList<CI> actuation = Controls.humidityControl(val, this.targetValue, this.controlActuator);
+									
+										//add to the list of values to publish the commanded action
+										for(int j = 0; j < actuation.size(); j++) {
+											publishActuation.add(actuation.get(j));
+										}
 									}
 								
 								}
@@ -385,11 +398,16 @@ public class App
 										}
 									}
 									
-									ArrayList<CI> actuation = Controls.lightControl(val, this.targetValue, this.controlActuator);
-								
-									//add to the list of values to publish the commanded action
-									for(int j = 0; j < actuation.size(); j++) {
-										publishActuation.add(actuation.get(j));
+									if(this.controlActuator == null) {
+										//No actuators to control available
+										System.out.println("[WARN] unable to control light in " + sector + ": no lamps available");
+									}else {
+										ArrayList<CI> actuation = Controls.lightControl(val, this.targetValue, this.controlActuator);
+									
+										//add to the list of values to publish the commanded action
+										for(int j = 0; j < actuation.size(); j++) {
+											publishActuation.add(actuation.get(j));
+										}
 									}
 								
 								}
@@ -405,13 +423,17 @@ public class App
 										}
 									}
 									
-									ArrayList<CI> actuation = Controls.soilmControl(val, this.targetValue, this.controlActuator);
-								
-									//add to the list of values to publish the commanded action
-									for(int j = 0; j < actuation.size(); j++) {
-										publishActuation.add(actuation.get(j));
+									if(this.controlActuator == null) {
+										//No actuators to control available
+										System.out.println("[WARN] unable to control soil humidity in " + sector + ": no irrigators available");
+									}else {
+										ArrayList<CI> actuation = Controls.soilmControl(val, this.targetValue, this.controlActuator);
+									
+										//add to the list of values to publish the commanded action
+										for(int j = 0; j < actuation.size(); j++) {
+											publishActuation.add(actuation.get(j));
+										}
 									}
-								
 								}
 								if(type.equals("smoke")) {
 									
@@ -426,13 +448,18 @@ public class App
 										}
 									}
 									
-									ArrayList<CI> actuation = Controls.smokeControl(val, 0, this.controlActuator);
-								
-									//add to the list of values to publish the commanded action
-									for(int j = 0; j < actuation.size(); j++) {
-										publishActuation.add(actuation.get(j));
+									if(this.controlActuator == null) {
+										//No actuators to control available
+										System.out.println("[WARN] unable to control fire in " + sector + ": no sprinklers available");
+									}else {
+										ArrayList<CI> actuation = Controls.smokeControl(val, 0, this.controlActuator);
+									
+										//add to the list of values to publish the commanded action
+										for(int j = 0; j < actuation.size(); j++) {
+											publishActuation.add(actuation.get(j));
+										}
 									}
-								
+										
 								}
 								if(type.equals("PIR")) {
 									
@@ -448,13 +475,18 @@ public class App
 										}
 									}
 									
-									ArrayList<CI> actuation = Controls.movementControl(val, 0, this.controlActuator);
-								
-									//add to the list of values to publish the commanded action
-									for(int j = 0; j < actuation.size(); j++) {
-										publishActuation.add(actuation.get(j));
+									if(this.controlActuator == null) {
+										//No actuators to control available
+										System.out.println("[WARN] unable to control intrusions in " + sector + ": no alarms available");
+									}else {
+										ArrayList<CI> actuation = Controls.movementControl(val, 0, this.controlActuator);
+									
+										//add to the list of values to publish the commanded action
+										for(int j = 0; j < actuation.size(); j++) {
+											publishActuation.add(actuation.get(j));
+										}
 									}
-								
+									
 								}
 								
 								
@@ -483,7 +515,7 @@ public class App
 		for(i = 0; i< num_resources_mn; i++) {
 			System.out.println("[DEBUG] subscribe to: " + resources_paths_mn.get(i));
 			try {
-				ctrl_app.createSubscription("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/" + resources_paths_mn.get(i),
+				ctrl_app.createSubscription("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + resources_paths_mn.get(i),
 				resources_paths_mn.get(i).replaceAll("/", "_"), "coap://127.0.0.1:5685/" + resources_paths_mn.get(i));
 			} catch (Exception e) {
 				System.err.println("[ERROR] fail to subscribe to " + resources_paths_mn.get(i) + " Error: " + e.getMessage());
@@ -500,7 +532,7 @@ public class App
 			}
 			
 			//Publish content instance to test the system
-			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/" + resources_paths_mn.get(0), "15");
+			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + resources_paths_mn.get(0), "15");
 			Thread.sleep(500);	//Sleep for half second to avoid wasting resources
 		}
 		
