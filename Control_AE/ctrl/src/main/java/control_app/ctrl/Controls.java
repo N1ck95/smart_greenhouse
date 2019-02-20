@@ -13,26 +13,29 @@ public class Controls {
 		int j = 0;
 		int difference = 0;
 		int meta = actuators.size()/2;
+		System.out.println("meta is "+ meta);
+		System.out.println("target value is "+ targetValue);
 		m = meta;
 		ArrayList<CI> turn_on_act = new ArrayList<CI>();
 		difference = val - targetValue;
+		System.out.println("[INFO] Difference is " + difference);
 		if (val>targetValue) {
 			if (difference > 0) {
 				if (k < meta) {
-					turn_on_act.add(new CI(actuators.get(k),"1"));
+					turn_on_act.add(new CI("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + actuators.get(k),"1"));
 					k++;
 				}
 			}
 			if (difference > 10) {
 				if (k < meta) {
-					turn_on_act.add(new CI(actuators.get(k),"1"));
+					turn_on_act.add(new CI("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + actuators.get(k),"1"));
 					k++;
 				}
 			}
 			if (difference > 20) {
 				if (k < meta) {
 					for(j = k; j<meta; j++) {
-						turn_on_act.add(new CI(actuators.get(j),"1"));
+						turn_on_act.add(new CI("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + actuators.get(j),"1"));
 					}
 				}
 			}
@@ -40,20 +43,20 @@ public class Controls {
 		if (val<targetValue) {
 			if (difference < 0) {
 				if (m < actuators.size()) {
-					turn_on_act.add(new CI(actuators.get(m),"1"));
+					turn_on_act.add(new CI("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + actuators.get(m),"1"));
 					m++;
 				}
 			}
 			if (difference < -10) {
 				if (m < actuators.size()) {
-					turn_on_act.add(new CI(actuators.get(m),"1"));
+					turn_on_act.add(new CI("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + actuators.get(m),"1"));
 					m++;
 				}
 			}
 			if (difference < -20) {
 				if (m < actuators.size()) {
 					for(j = m; j<actuators.size(); j++) {
-						turn_on_act.add(new CI(actuators.get(j),"1"));
+						turn_on_act.add(new CI("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + actuators.get(j),"1"));
 					}
 				}
 			}
@@ -61,7 +64,7 @@ public class Controls {
 		//turn off all the actuators when the desired value is reached
 		if (val == targetValue) {
 			for (j = 0;j<actuators.size();j++) {
-				turn_on_act.add(new CI(actuators.get(j),"0"));
+				turn_on_act.add(new CI("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + actuators.get(j),"0"));
 			}
 		}
 		return turn_on_act;
@@ -82,11 +85,11 @@ public class Controls {
 		ArrayList<CI> turn_on_act = new ArrayList<CI>();
 		if (val == 1) {
 			for (i = 0; i< actuators.size(); i++) {
-				turn_on_act.add(new CI(actuators.get(i),"1"));
+				turn_on_act.add(new CI("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + actuators.get(i),"1"));
 			}
 		} else //if there is no smoke i.e no fire anymore
 		if (val == 0) {
-			turn_on_act.add(new CI(actuators.get(i),"0"));
+			turn_on_act.add(new CI("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + actuators.get(i),"0"));
 		}
 		return turn_on_act;
 	}

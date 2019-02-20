@@ -78,6 +78,7 @@ public class App
 		adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + "Sector1" + "/Sensor", "Humid");
 		adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + "Sector1" + "/Sensor/Humid", "Sensor0");
 		adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + "Sector1" + "/Sensor/Humid/Sensor0", "10");
+		adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Service_AE" + "/" + "Sector1" + "/sensor/temperature/temp_sens1", "10");
 		/*adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE", "Sector2");
 		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector2", "Sensor");
 		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector2/Sensor", "Temp");
@@ -132,9 +133,18 @@ public class App
 		final ArrayList<Sector> sectors = new ArrayList<Sector>();
 		for (i = 0; i< num_resources_mn; i++) {
 			String[] subpaths = resources_paths_mn.get(i).split("/");
-			if(sectors.contains(subpaths[3]) == false) {
+			boolean exists = false;
+			for(int j = 0; j < sectors.size(); j++) {
 				//new sector
-				sectors.add(new Sector(subpaths[3]));
+				if(sectors.get(j).sectorName.equals(subpaths[0])) {
+					exists = true;
+					break;
+				}
+			}
+			if(exists == false) {
+				System.out.println(resources_paths_mn.get(i));
+				System.out.println(subpaths[0]);
+				sectors.add(new Sector(subpaths[0]));
 			}
 		}
 		
@@ -158,9 +168,10 @@ public class App
 		String target;
 		Scanner reader = new Scanner(System.in);  // Reading from System.in
 		for(i = 0;i < num_sectors; i++) {
-			System.out.println("Enter the target temp for sector " + sectors.get(i));
+			System.out.println("Enter the target temp for sector " + sectors.get(i).sectorName);
 			target = reader.next();
-			target_temp.add(target);
+			sectors.get(i).targetTemp = Integer.parseInt(target);
+			System.out.println("Target temp is " + target);
 			//Create resource to receive notifications about target temperature changes
 			server.add(new CoapResource(sectors.get(i).sectorName).add(new CoapResource("targetTemperature") {
 				
@@ -175,7 +186,7 @@ public class App
 				
 			}));
 			
-			System.out.println("Enter the target humidity for sector " + sectors.get(i));
+			System.out.println("Enter the target humidity for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_humid.add(target);
 			//Create resource to receive notifications about target humidity changes
@@ -193,7 +204,7 @@ public class App
 			}));
 			
 			
-			System.out.println("Enter the target light for sector " + sectors.get(i));
+			System.out.println("Enter the target light for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_light.add(target);
 			//Create resource to receive notifications about target light changes
@@ -211,7 +222,7 @@ public class App
 			}));
 			
 			
-			System.out.println("Enter the target soil moisture for sector " + sectors.get(i));
+			System.out.println("Enter the target soil moisture for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_soilmoist.add(target);
 			//Create resource to receive notifications about target light changes
@@ -234,7 +245,7 @@ public class App
 		for (i = 0; i< num_sectors ;i++) {
 			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name, sectors.get(i).sectorName);
 			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName, "TargetTemp");
-			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName + "/TargetTemp", target_temp.get(i));
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName + "/TargetTemp", String.valueOf(sectors.get(i).targetTemp));
 			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName, "TargetHumid");
 			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName + "/TargetHumid", target_humid.get(i));
 			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName, "TargetLight");
@@ -273,11 +284,14 @@ public class App
 			for(int j = 0; j < actuators_paths_mn.size(); j++) {
 				String[] sub = actuators_paths_mn.get(j).split("/");
 				String sector = sub[0];
+				System.out.println(sector);
+				System.out.println(sectors.get(i).sectorName);
 				String type = sub[2];
-				if(sectors.get(i).equals(sector)) {
+				if(sectors.get(i).sectorName.equals(sector)) {
 					//Actuator belongs to this sector
-					if(type.equals("fan")) {
+					if(type.equals("fans")) {
 						sectors.get(i).fans.add(actuators_paths_mn.get(j));
+						System.out.println(sectors.get(i).fans.get(0));
 					}else if(type.equals("irrigator_soilm")) {
 						sectors.get(i).irrigators_soilm.add(actuators_paths_mn.get(j));
 					}else if(type.equals("irrigator_humid")) {
@@ -331,7 +345,7 @@ public class App
 								Node p = item_list.item(0);
 								Element con = (Element) p;
 								val = Integer.parseInt(con.getTextContent());
-								
+								System.out.println(val);
 								String[] subpaths = path_resource.split("/");
 								String sector = subpaths[0];
 								String type = subpaths[2];						
@@ -342,8 +356,11 @@ public class App
 										if(sectors.get(j).sectorName.equals(sector)) {
 											//Info about the sector I have to control
 											this.targetValue = sectors.get(j).targetTemp;
+											System.out.println("[INFO] Target temperature: " + this.targetValue);
 											this.numActuators = sectors.get(j).fans.size();
 											this.controlActuator = sectors.get(j).fans;
+											System.out.println("[INFO] Controlling temperature");
+											System.out.println(controlActuator.get(0));
 											break;
 										}
 									}
@@ -532,8 +549,8 @@ public class App
 			}
 			
 			//Publish content instance to test the system
-			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + resources_paths_mn.get(0), "15");
-			Thread.sleep(500);	//Sleep for half second to avoid wasting resources
+			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/Sector1/sensor/temperature/temp_sens1" , "15");
+			Thread.sleep(2000);	//Sleep for half second to avoid wasting resources
 		}
 		
     }
