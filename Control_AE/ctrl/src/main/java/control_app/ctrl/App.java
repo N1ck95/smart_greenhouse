@@ -345,7 +345,7 @@ public class App
 								Node p = item_list.item(0);
 								Element con = (Element) p;
 								val = Integer.parseInt(con.getTextContent());
-								System.out.println(val);
+								System.out.println("[INFO] Value measured for " + path_resource + "is " + val);
 								String[] subpaths = path_resource.split("/");
 								String sector = subpaths[0];
 								String type = subpaths[2];						
@@ -356,7 +356,7 @@ public class App
 										if(sectors.get(j).sectorName.equals(sector)) {
 											//Info about the sector I have to control
 											this.targetValue = sectors.get(j).targetTemp;
-											System.out.println("[INFO] Target temperature: " + this.targetValue);
+											System.out.println("[INFO] Target temperature for " + sectors.get(j).sectorName + "is " + this.targetValue);
 											this.numActuators = sectors.get(j).fans.size();
 											this.controlActuator = sectors.get(j).fans;
 											System.out.println("[INFO] Controlling temperature");
@@ -384,8 +384,11 @@ public class App
 										if(sectors.get(j).sectorName.equals(sector)) {
 											//Info about the sector I have to control
 											this.targetValue = sectors.get(j).targetHumidity;
+											System.out.println("[INFO] Target humidity for " + sectors.get(j).sectorName + "is " + this.targetValue);
 											this.numActuators = sectors.get(j).irrigators_humid.size();
 											this.controlActuator = sectors.get(j).irrigators_humid;
+											System.out.println("[INFO] Controlling humidity");
+											System.out.println(controlActuator.get(0));
 											break;
 										}
 									}
@@ -409,8 +412,11 @@ public class App
 										if(sectors.get(j).sectorName.equals(sector)) {
 											//Info about the sector I have to control
 											this.targetValue = sectors.get(j).targetLight;
+											System.out.println("[INFO] Target light for " + sectors.get(j).sectorName + "is " + this.targetValue);
 											this.numActuators = sectors.get(j).lamps.size();
 											this.controlActuator = sectors.get(j).lamps;
+											System.out.println("[INFO] Controlling light");
+											System.out.println(controlActuator.get(0));
 											break;
 										}
 									}
@@ -434,8 +440,11 @@ public class App
 										if(sectors.get(j).sectorName.equals(sector)) {
 											//Info about the sector I have to control
 											this.targetValue = sectors.get(j).targetSoil;
+											System.out.println("[INFO] Target soil moistiure for " + sectors.get(j).sectorName + "is " + this.targetValue);
 											this.numActuators = sectors.get(j).irrigators_soilm.size();
 											this.controlActuator = sectors.get(j).irrigators_soilm;
+											System.out.println("[INFO] Controlling soil moistiure");
+											System.out.println(controlActuator.get(0));
 											break;
 										}
 									}
@@ -460,6 +469,8 @@ public class App
 											//this.targetValue = sectors.get(j).targetSoil; dont need a target value for the smoke
 											this.numActuators = sectors.get(j).sprinklers.size();
 											this.controlActuator = sectors.get(j).sprinklers;
+											System.out.println("[INFO] Controlling smoke/fire");
+											System.out.println(controlActuator.get(0));
 											adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Security_AE/" + sector + "/FireAlarmStatus", Integer.toString(val));
 											break;
 										}
@@ -486,6 +497,8 @@ public class App
 											//this.targetValue = sectors.get(j).targetSoil; dont need a target value for the pir
 											this.numActuators = sectors.get(j).alarms.size();
 											this.controlActuator = sectors.get(j).alarms;
+											System.out.println("[INFO] Alarm for movement");
+											System.out.println(controlActuator.get(0));
 											//fill the corresponding movement status container
 											adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Security_AE/" + sector + "/MovementAlarmStatus", Integer.toString(val));
 											break;

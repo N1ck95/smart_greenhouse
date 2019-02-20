@@ -77,7 +77,45 @@ public class Controls {
 		return Controls.temperatureControl(val, targetValue, actuators);
 	}
 	public static ArrayList<CI> lightControl(int val, int targetValue, ArrayList<String> actuators) {
-		return Controls.temperatureControl(val, targetValue, actuators);
+		
+		int k = 0;
+		int j = 0;
+		int difference = 0;
+		
+		ArrayList<CI> turn_on_act = new ArrayList<CI>();
+		difference = val - targetValue;
+		System.out.println("[INFO] Difference is " + difference);
+		if (val>targetValue) {
+			System.out.println("[INFO] Can control only low light conditions");
+		}else
+		if (val<targetValue) {
+			if (difference < 0) {
+				if (k < actuators.size()) {
+					turn_on_act.add(new CI("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + actuators.get(k),"1"));
+					k++;
+				}
+			}
+			if (difference < -10) {
+				if (k < actuators.size()) {
+					turn_on_act.add(new CI("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + actuators.get(k),"1"));
+					k++;
+				}
+			}
+			if (difference < -20) {
+				if (k < actuators.size()) {
+					for(j = k; j<actuators.size(); j++) {
+						turn_on_act.add(new CI("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + actuators.get(j),"1"));
+					}
+				}
+			}
+		}
+		//turn off all the actuators when the desired value is reached
+		if (val == targetValue) {
+			for (j = 0;j<actuators.size();j++) {
+				turn_on_act.add(new CI("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + actuators.get(j),"0"));
+			}
+		}
+		return turn_on_act;
 	}
 	public static ArrayList<CI> smokeControl(int val, int targetValue, ArrayList<String> actuators) {
 		//if there is a fire, turn on all the sprinklers regardless of the fire so that we dont risk expansion of the fire

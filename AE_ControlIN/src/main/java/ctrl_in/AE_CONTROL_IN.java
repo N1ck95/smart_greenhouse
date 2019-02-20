@@ -29,18 +29,20 @@ import org.xml.sax.SAXException;
 
 
 
+
+
 public class AE_CONTROL_IN {
 	final static String in_ip = "127.0.0.1";			//Middle node ip
-	final static String in_id = "niccolo-in-cse";		//Middle node id
-	final static String in_name = "niccolo-in-name";	//Middle node name
+	final static String in_id = "in-cse";		//Middle node id
+	final static String in_name = "in-name";	//Middle node name
 	final static String AE_IN_control_name = "Control_AE_IN";
 	final static String AE_IN_name_security = "Security_AE_IN";
 	
 	final static String AE_name_control_MN = "Control_AE";				//Name of the Application Entity
 	final static String AE_name_security_MN = "Security_AE";
 	final static String middle_ip = "127.0.0.1";			//Middle node ip
-	final static String middle_id = "niccolo-mn-cse";		//Middle node id
-	final static String middle_name = "niccolo-mn-name";	//Middle node name
+	final static String middle_id = "mn-cse";		//Middle node id
+	final static String middle_name = "mn-name";	//Middle node name
 	
 	public void createSubscription(String cse, String ResourceName, String notificationUrl){
 		CoapClient client = new CoapClient(cse);
@@ -84,15 +86,22 @@ public class AE_CONTROL_IN {
 		List<String> discovery = new ArrayList<String>();
 		
 		//perform discovery on the middle node
-		discovery = adn.Discovery("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Service_AE");
+		try {
+			discovery = adn.Discovery("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Service_AE");//this is the port of the middle node?
+		}catch(Exception e) {
+			System.err.println("[ERROR] " + e);
+			System.out.println("[INFO] Terminating program");
+			System.exit(1);
+		}
 		System.out.println(discovery.get(0));
 		//get the total number of resources returned by the discovery
 		num_resources_mn = discovery.size();
-		System.out.println(num_resources_mn);
+		System.out.println("[DEBUG] num of resources: " + num_resources_mn);
+		
 		String pom;
 		//exclude the actuators from the list returned by the discovery
 		for (i = 0; i< num_resources_mn; i++) {
-			if (discovery.get(i).contains("Sensor")) {
+			if (discovery.get(i).contains("sensor")) {
 				pom = discovery.get(i);
 				resources_paths_mn.add(pom);
 			}else {
@@ -100,54 +109,100 @@ public class AE_CONTROL_IN {
 				actuators_paths_mn.add(pom);
 			}
 		}
-		//total number of sensors returned by the discovery
+
 		num_resources_mn = resources_paths_mn.size();
-		System.out.println(num_resources_mn);
+		System.out.println("[DEBUG] discovered devices: " + num_resources_mn);
 		
 		//find the number of sectors
 		
 		String sensor_path;
 		final ArrayList<Sector> sectors = new ArrayList<Sector>();
-		
 		for (i = 0; i< num_resources_mn; i++) {
 			String[] subpaths = resources_paths_mn.get(i).split("/");
-			String type = subpaths[5];	//get the type (temp, humidity,...)
-			int index_sector = resources_paths_mn.get(i).indexOf(subpaths[3]);
-			if(sectors.contains(subpaths[3]) == false) {
+			boolean exists = false;
+			for(int j = 0; j < sectors.size(); j++) {
 				//new sector
-				sectors.add(new Sector(subpaths[3]));
+				if(sectors.get(j).sectorName.equals(subpaths[0])) {
+					exists = true;
+					break;
+				}
 			}
+			if(exists == false) {
+				System.out.println(resources_paths_mn.get(i));
+				System.out.println(subpaths[0]);
+				sectors.add(new Sector(subpaths[0]));
+			}
+		}
+		System.out.println("[INFO] number of sectors: " + sectors.size());
+		int k = 0;
+		for (i = 0; i< num_resources_mn; i++) {
+			String[] subpaths = resources_paths_mn.get(i).split("/");
+			String type = subpaths[2];	//get the type (temp, humidity,...)
+			String sector = subpaths[0];
+			System.out.println(type);
+			System.out.println(resources_paths_mn.get(i));
 			//i assume there are no duplicates in the paths of the sensors
 			if (type.equals("temperature")) {
-				sensor_path = resources_paths_mn.get(i).substring(index_sector, resources_paths_mn.get(i).length());
-				sectors.get(i).temp_sens.add(sensor_path);
+				for (k=0;k<sectors.size();k++) {
+					if (sector.equals(sectors.get(k).sectorName)) {
+						sectors.get(k).temp_sens.add(resources_paths_mn.get(i));
+						break;
+					}
+				}
+				
 			}
 			if (type.equals("humidity")) {
-				sensor_path = resources_paths_mn.get(i).substring(index_sector, resources_paths_mn.get(i).length());
-				sectors.get(i).humid_sens.add(sensor_path);
+				for (k=0;k<sectors.size();k++) {
+					if (sector.equals(sectors.get(k).sectorName)) {
+						sectors.get(k).humid_sens.add(resources_paths_mn.get(i));
+						break;
+					}
+				}
+				
 			}
 			if (type.equals("light")) {
-				sensor_path = resources_paths_mn.get(i).substring(index_sector, resources_paths_mn.get(i).length());
-				sectors.get(i).light_sens.add(sensor_path);
+				for (k=0;k<sectors.size();k++) {
+					if (sector.equals(sectors.get(k).sectorName)) {
+						sectors.get(k).light_sens.add(resources_paths_mn.get(i));
+						break;
+					}
+				}
 			}
 			if (type.equals("soil_moistiure")) {
-				sensor_path = resources_paths_mn.get(i).substring(index_sector, resources_paths_mn.get(i).length());
-				sectors.get(i).soilmoist_sens.add(sensor_path);
+				for (k=0;k<sectors.size();k++) {
+					if (sector.equals(sectors.get(k).sectorName)) {
+						sectors.get(k).soilmoist_sens.add(resources_paths_mn.get(i));
+						break;
+					}
+				}
 			}
 			if (type.equals("smoke")) {
-				sensor_path = resources_paths_mn.get(i).substring(index_sector, resources_paths_mn.get(i).length());
-				sectors.get(i).smoke_sens.add(sensor_path);
+				for (k=0;k<sectors.size();k++) {
+					if (sector.equals(sectors.get(k).sectorName)) {
+						sectors.get(k).smoke_sens.add(resources_paths_mn.get(i));
+						break;
+					}
+				}
 			}
 			if (type.equals("movement")) {
-				sensor_path = resources_paths_mn.get(i).substring(index_sector, resources_paths_mn.get(i).length());
-				sectors.get(i).pir_sens.add(sensor_path);
+				for (k=0;k<sectors.size();k++) {
+					if (sector.equals(sectors.get(k).sectorName)) {
+						sectors.get(k).pir_sens.add(resources_paths_mn.get(i));
+						break;
+					}
+				}
 			}
 			if (type.equals("camera")) {
-				sensor_path = resources_paths_mn.get(i).substring(index_sector, resources_paths_mn.get(i).length());
-				sectors.get(i).cam_sens.add(sensor_path);
+				for (k=0;k<sectors.size();k++) {
+					if (sector.equals(sectors.get(k).sectorName)) {
+						sectors.get(k).cam_sens.add(resources_paths_mn.get(i));
+						break;
+					}
+				}
 			}
 			
 		}
+		System.out.println(sectors.get(0).temp_sens.get(0));
 		
 		//create lists for target values for the physical quantities temperature, humidity, light and soil moistiure					
 		List<String> target_temp = new ArrayList<String>();
@@ -162,22 +217,22 @@ public class AE_CONTROL_IN {
 		Scanner reader = new Scanner(System.in);  // Reading from System.in
 		
 		for(i = 0;i < num_sectors; i++) {
-			System.out.println("Enter the target temp for sector " + sectors.get(i));
+			System.out.println("Enter the target temp for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_temp.add(target);
 			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + "Sector" + i + "/TargetTemp", target);
 			
-			System.out.println("Enter the target humidity for sector " + sectors.get(i));
+			System.out.println("Enter the target humidity for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_humid.add(target);
 			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + "Sector" + i + "/TargetHumid", target);
 			
-			System.out.println("Enter the target light for sector " + sectors.get(i));
+			System.out.println("Enter the target light for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_light.add(target);
 			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + "Sector" + i + "/TargetLight", target);
 			
-			System.out.println("Enter the target soil moisture for sector " + sectors.get(i));
+			System.out.println("Enter the target soil moisture for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_soilmoist.add(target);
 			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + "Sector" + i + "/TargetSoilMoist", target);
@@ -353,7 +408,7 @@ public class AE_CONTROL_IN {
 									for(int j = 0; j < sectors.size(); j++) {
 										if(sectors.get(j).sectorName.equals(sector)) {
 											//create content instance in the appropriate container
-											adn.createContentInstance("coap://127.0.0.1:5684/~/" + in_id + "/" + in_name + "/" + AE_IN_name + "/" + sector + "/" + "Movement" + "/" + sensor_name, Integer.toString(val));
+											adn.createContentInstance("coap://127.0.0.1:5684/~/" + in_id + "/" + in_name + "/" + AE_IN_control_name + "/" + sector + "/" + "Movement" + "/" + sensor_name, Integer.toString(val));
 											break;
 										}
 									}
@@ -396,8 +451,8 @@ public class AE_CONTROL_IN {
 		//coap monitor on port 5686
 		for(i = 0; i< num_resources_mn; i++) {
 			System.out.println(resources_paths_mn.get(i));
-			ctrl_app.createSubscription("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/" + resources_paths_mn.get(i),
-			resources_paths_mn.get(i).replaceAll("/", "_"), "coap://127.0.0.1:5686/" + resources_paths_mn.get(i));
+			ctrl_app.createSubscription("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + resources_paths_mn.get(i),
+			resources_paths_mn.get(i).replaceAll("/", "-"), "coap://127.0.0.1:5686/" + resources_paths_mn.get(i));
 		}	
 		
 	

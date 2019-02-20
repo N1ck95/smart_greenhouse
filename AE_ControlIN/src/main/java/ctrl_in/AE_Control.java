@@ -146,7 +146,7 @@ public class AE_Control {
 	    return count;
 	}
 	
-	public  ArrayList<String> Discovery(String cse){
+	public  ArrayList<String> Discovery(String cse) throws Exception{
 		  
 	    URI uri = null;
 	    try {
@@ -166,27 +166,32 @@ public class AE_Control {
 	    
 	    String response = new String(responseBody.getPayload());
 	    System.out.println("[DEBUG] payload discovery response: " + response);
+	    System.out.println("[DEBUG] code discovery response: " + responseBody.getCode().toString());
 	    
-	    ArrayList<String> final_paths = new ArrayList<String>();
-
-	    JSONObject jsonPayload = new JSONObject(response);
-	    JSONArray paths = jsonPayload.getJSONArray("m2m:uril");
-	    
-	    System.out.println("[DEBUG] number of elements in discovery: " + paths.length());
-	    
-	    for(int i = 0; i < paths.length(); i++) {
-	    	String[] subpaths = paths.get(i).toString().split("/");
-	    	//System.out.println(subpaths.length);
-	    	if(subpaths.length == 8) {
-	    		//Is a full path to a sensor
-	    		System.out.println(subpaths[0]);
-	    		String cleaned = paths.getString(i).replace("/" + subpaths[1] + "/" + subpaths[2] + "/" + subpaths[3] + "/", "");
-	    		System.out.println("DEBUG: cleaned = " + cleaned);
-	    		final_paths.add(cleaned);
-	    	}
+	    if(responseBody.isSuccess()) {
+		    ArrayList<String> final_paths = new ArrayList<String>();
+	
+		    JSONObject jsonPayload = new JSONObject(response);
+		    String[] paths = jsonPayload.getString("m2m:uril").split(" ");
+		    
+		    System.out.println("[DEBUG] number of elements in discovery: " + paths.length);
+		    
+		    for(int i = 0; i < paths.length; i++) {
+		    	String[] subpaths = paths[i].toString().split("/");
+		    	//System.out.println(subpaths.length);
+		    	if(subpaths.length == 8) {
+		    		//Is a full path to a sensor
+		    		//System.out.println(subpaths[0]);
+		    		String cleaned = paths[i].replace("/" + subpaths[1] + "/" + subpaths[2] + "/" + subpaths[3] + "/", "");
+		    		System.out.println("DEBUG: cleaned = " + cleaned);
+		    		final_paths.add(cleaned);
+		    	}
+		    }
+		    
+		    return final_paths;
+	    }else {
+	    	throw new Exception("Discovery returned error code: " + responseBody.getCode().toString() + " message: " + response);
+	    	
 	    }
-	    
-	    return final_paths;
 	  }
-
 }
