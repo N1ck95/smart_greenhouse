@@ -27,11 +27,13 @@ public class TopicResource extends CoapResource{
 		//Publish request
 		int ct = exchange.getRequestOptions().getContentFormat();
 		System.out.println("Received PUT request");
-		if(this.contentType == ct) {
+		if(exchange.getRequestOptions().isContentFormat(this.contentType)) {
 			this.value = exchange.getRequestText();
 			exchange.respond(ResponseCode.CHANGED);
 			this.notifyObserverRelations(null);
 		}else {
+			System.out.println("Received cf: " + ct);
+			System.out.println("My content format is: " + contentType);
 			exchange.respond(ResponseCode.BAD_REQUEST);
 		}
 	}

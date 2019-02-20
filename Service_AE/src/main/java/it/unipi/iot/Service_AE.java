@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.concurrent.Semaphore;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -18,6 +19,7 @@ import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.core.network.CoapEndpoint;
 import org.eclipse.californium.core.server.resources.CoapExchange;
+import org.eclipse.californium.core.server.resources.Resource;
 import org.eclipse.californium.core.coap.CoAP.Code;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
@@ -181,7 +183,64 @@ public class Service_AE extends CoapServer{
 							//devices.addActuator(MAC, sector);	//Todo: check if can be avoided
 							//Is an actuator --> subscribe to the container just created
 							//create a resource in the CoapMonitor to handle updates of this container
-							if(server.getRoot().getChild(MAC) == null) {
+							
+							Resource res = server.getRoot();
+							Resource parent;
+							for(int i = 0; i < 5; i++) {
+								parent = res;
+								Iterator<Resource> childrens = res.getChildren().iterator();
+								while(childrens.hasNext()) {
+									Resource child = childrens.next();
+									if(child.getName().equals(path[i])) {
+										res = child;
+										//Subpath exists
+									}
+								}
+								
+								if(res == parent) {
+									Resource tmp;
+									if(i == 4) {
+										//Topic is MAC
+										tmp = new CoapResource(MAC) {
+											@SuppressWarnings("unused")	//Is used remotely
+											public void handlePOST(CoapExchange exchange){
+												exchange.respond(ResponseCode.CREATED);
+												String payload = exchange.getRequestText();
+												System.out.println("[DEBUG] actuator update: " + payload);
+												
+												DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+											    DocumentBuilder builder;
+												try {
+													builder = factory.newDocumentBuilder();
+													InputSource is = new InputSource(new StringReader(payload));
+													Document xmlDoc = builder.parse(is);
+													NodeList conList = xmlDoc.getElementsByTagName("con");
+													if(conList.getLength() == 1) {
+														String val = conList.item(0).getTextContent();
+														System.out.println("[DEBUG] actuator new value: " + val);
+														broker.publish("/ps" + this.getPath() + this.getName(), val);	//publish the update 
+													}
+												} catch (ParserConfigurationException e) {
+													System.err.println("[ERROR] Error creating DocumentBuilder for XML");
+												} catch (SAXException e) {
+													//Error parsing XML document
+													System.err.println("[ERROR] Error parsing XML document: " + e.getMessage());
+												} catch (IOException e) {
+													//IO error parsing XML document
+													System.err.println("[ERROR] I/O error: " + e.getMessage());
+												}
+											}
+										};
+									}else {
+										tmp = new CoapResource(path[i]);
+									}
+									res.add(tmp);
+									res = tmp;	//Update exploring resource
+								}
+							}
+							
+							
+							/*if(server.getRoot().getChild(MAC) == null) {
 								//resource to handle this container not jet created
 								server.add(new CoapResource("Service_AE").add(new CoapResource(sector).add(new CoapResource(type).add(new CoapResource(model).add(new CoapResource(MAC) {
 										@SuppressWarnings("unused")	//Is used remotely
@@ -213,7 +272,8 @@ public class Service_AE extends CoapServer{
 											}
 										}
 								})))));
-							}
+							}*/
+							System.out.println("MAC: " + MAC);
 							middle_node.subscribe(topic.topic, String.valueOf(PORT), "Service_AE/" + sector + "/" + type + "/" + model + "/" + MAC);	//Subscribe to the given topic on the MN, the resource that will handle updates have the same name of topic
 						}
 					}
