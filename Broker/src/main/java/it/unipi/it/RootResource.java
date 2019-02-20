@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -39,11 +41,21 @@ public class RootResource extends CoapResource{
 	private void loadAssociation() {
 		association = new ArrayList<MACSector>();
 		
-		URL filePath = RootResource.class.getResource("association.txt");
-		File file = new File(filePath.getFile());
+		//URL filePath = RootResource.class.getResource("association.txt");
+		//File file = new File(filePath.getFile());
+		
+		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+		InputStream fileInput = classLoader.getResourceAsStream("association.txt");
+		
+		if(fileInput == null) {
+			System.out.println("[WARN] Association file not found");
+			return;
+		}
+		
 		try {
-			BufferedReader br = new BufferedReader(new FileReader(file));
-			
+			//BufferedReader br = new BufferedReader(new FileReader(file));
+			InputStreamReader sr = new InputStreamReader(fileInput);
+			BufferedReader br = new BufferedReader(sr);
 			String line;
 			while((line = br.readLine()) != null) {
 				String[] el = line.split(" ");	//Each line is formatted as: "<MAC> <sector>"
