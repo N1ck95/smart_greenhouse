@@ -93,6 +93,8 @@ public class RootResource extends CoapResource{
 		ct = ct.replace("ct=", "");	//isolate the content type code
 		String[] path = topic.split("/");
 		
+		System.out.println("[DEBG] Received POST request from " + exchange.getSourceAddress().getHostAddress() + " payload: " + request);
+		
 		if(path.length == 1) {
 			//topic to configure a specific device
 			String MAC = path[0];

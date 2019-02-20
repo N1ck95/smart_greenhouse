@@ -43,7 +43,7 @@ public class TopicResource extends CoapResource{
 			//TODO: check how to create a custom response code (need 2.07 for NO_CONTENT)
 			exchange.respond(ResponseCode.NO_CONTENT);
 		}else {
-			if(exchange.getRequestOptions().isAccept(contentType)){
+			if(exchange.getRequestOptions().isAccept(contentType) || exchange.getRequestOptions().hasAccept() == false){
 			//if(exchange.getRequestOptions().isContentFormat(contentType)) {
 				exchange.respond(ResponseCode.CONTENT, value);
 			}else {
