@@ -239,40 +239,6 @@ public class Service_AE extends CoapServer{
 								}
 							}
 							
-							
-							/*if(server.getRoot().getChild(MAC) == null) {
-								//resource to handle this container not jet created
-								server.add(new CoapResource("Service_AE").add(new CoapResource(sector).add(new CoapResource(type).add(new CoapResource(model).add(new CoapResource(MAC) {
-										@SuppressWarnings("unused")	//Is used remotely
-										public void handlePOST(CoapExchange exchange){
-											exchange.respond(ResponseCode.CREATED);
-											String payload = exchange.getRequestText();
-											System.out.println("[DEBUG] actuator update: " + payload);
-											
-											DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-										    DocumentBuilder builder;
-											try {
-												builder = factory.newDocumentBuilder();
-												InputSource is = new InputSource(new StringReader(payload));
-												Document xmlDoc = builder.parse(is);
-												NodeList conList = xmlDoc.getElementsByTagName("con");
-												if(conList.getLength() == 1) {
-													String val = conList.item(0).getTextContent();
-													System.out.println("[DEBUG] actuator new value: " + val);
-													broker.publish("/ps" + this.getPath() + this.getName(), val);	//publish the update 
-												}
-											} catch (ParserConfigurationException e) {
-												System.err.println("[ERROR] Error creating DocumentBuilder for XML");
-											} catch (SAXException e) {
-												//Error parsing XML document
-												System.err.println("[ERROR] Error parsing XML document: " + e.getMessage());
-											} catch (IOException e) {
-												//IO error parsing XML document
-												System.err.println("[ERROR] I/O error: " + e.getMessage());
-											}
-										}
-								})))));
-							}*/
 							System.out.println("MAC: " + MAC);
 							middle_node.subscribe(topic.topic, String.valueOf(PORT), "Service_AE/" + sector + "/" + type + "/" + model + "/" + MAC);	//Subscribe to the given topic on the MN, the resource that will handle updates have the same name of topic
 						}

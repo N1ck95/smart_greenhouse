@@ -24,7 +24,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-public class Resource extends CoapResource{
+public class DeviceResource extends CoapResource{
 	
 	//public boolean changed;
 	//public Integer lastVal;
@@ -32,12 +32,12 @@ public class Resource extends CoapResource{
 	public ArrayList<String> controlActuator;	//Type of actuator that I can use
 	public int numActuators;		//Number of target type of actuators
 	
-	public Resource(String name) {
+	public DeviceResource(String name) {
 	    super(name);
 	    setObservable(false);
 	}
 	
-	public Resource(String name, int targetValue, ArrayList<String> controlActuator) {
+	public DeviceResource(String name, int targetValue, ArrayList<String> controlActuator) {
 		super(name);
 		setObservable(false);
 		
