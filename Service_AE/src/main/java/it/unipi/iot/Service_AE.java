@@ -1,6 +1,10 @@
 package it.unipi.iot;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -42,13 +46,50 @@ public class Service_AE extends CoapServer{
 	final static String AE_name = "Service_AE";				//Name of the Application Entity
 	final static int PORT = 6000;							//Port of this AE
 	
+	static ArrayList<MACPath> association = new ArrayList<MACPath>();
+	
+	private static void loadAssociation() {
+		//URL filePath = RootResource.class.getResource("association.txt");
+		//File file = new File(filePath.getFile());
+		
+		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+		InputStream fileInput = classLoader.getResourceAsStream("association.txt");
+		
+		if(fileInput == null) {
+			System.out.println("[WARN] Association file not found");
+			return;
+		}
+		
+		try {
+			//BufferedReader br = new BufferedReader(new FileReader(file));
+			InputStreamReader sr = new InputStreamReader(fileInput);
+			BufferedReader br = new BufferedReader(sr);
+			String line;
+			while((line = br.readLine()) != null) {
+				String[] el = line.split(" ");	//Each line is formatted as: "<MAC> <path>"
+				association.add(new MACPath(el[0], el[1]));
+			}
+			
+			System.out.println("[INFO] association list loaded. " + association.size() + " elements.");
+			br.close();
+		} catch (FileNotFoundException e) {
+			System.err.println("[ERROR] Unable to locate association file. Error: " + e);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			System.err.println("[ERROR] Fail reading association file. Error: " + e);
+		}
+	}
+	
 	public static void main(String[] args) throws InterruptedException {
 		final BrokerCoAP broker = new BrokerCoAP(broker_uri);
 		//Tree devices = new Tree("Service_AE");
 		final OneM2M middle_node = new OneM2M(middle_ip, middle_id, middle_name);	//To interact with middle_node
 		final Service_AE server = new Service_AE();
+		
 		server.addEndpoint(new CoapEndpoint(new InetSocketAddress(PORT)));
 		server.start();
+		
+		loadAssociation();
 		
 		System.out.println("[INFO] Server started");
 		
@@ -114,133 +155,153 @@ public class Service_AE extends CoapServer{
 					Topic topic = newTopics.get(0);
 					newTopics.remove(0);
 					
-					String[] path = topic.topic.split("/");
-					if(path[0].equals(AE_name)) {
-						//Is a topic that I have to link in OneM2M
-						String sector = path[1];
-						String type = path[2];
-						String model = path[3];
-						String MAC = path[4];
-						
-						//Create the containers for this device on OneM2M
-						
-						try {
-							middle_node.createContainer(AE_name, sector);	//create the Sector container
-						}catch(Exception e) {
-							System.err.println("[ERROR] Failure creating sector container: " + e);
+					String[] path;
+					String fullpath = null;
+					
+					for(int i = 0; i < association.size(); i++) {
+						if(association.get(i).MAC.equals(topic.topic)) {
+							//MAC associated to a sector and a device
+							fullpath = association.get(i).path;
 						}
-						
-						try {
-							middle_node.createContainer(AE_name + "/" + sector, type);	//Create the type container
-						}catch(Exception e) {
-							System.err.println("[ERROR] Failure creating type container: " + e);
-						}
-						
-						try {
-							middle_node.createContainer(AE_name + "/" + sector + "/" + type, model);
-						}catch(Exception e) {
-							System.err.println("[ERROR] Failure creating model container: " + e);
-						}
-						
-						try {
-							middle_node.createContainer(AE_name + "/" + sector + "/" + type + "/" + model, MAC);	//create the device container
-						}catch(Exception e) {
-							System.err.println("[ERROR] Failure creating MAC container: " + e);
-						}
-						
-						if(type.equals("sensor")) {
-							//devices.addSensor(MAC, sector);	//TODO: check if can be avoided
-							//Is a sensor --> I also have to subscribe to this topic
-							CoapClient sensorClient = new CoapClient(broker_uri + "/ps/" + topic.topic);
-							System.out.println("[INFO] Observing: " + broker_uri + "/ps/" + topic.topic);
-							Request req = new Request(Code.GET);
-							req.getOptions().setAccept(MediaTypeRegistry.TEXT_PLAIN);
-							req.setObserve();
-							req.setURI(sensorClient.getURI());
+					}
+					
+					if(fullpath == null) {
+						System.out.println("[WARN] device with MAC: " + topic.topic + " not associated to any path");
+					}else {
+						path = fullpath.split("/");
+					
+						if(path[0].equals(AE_name)) {
+							//Is a topic that I have to link in OneM2M
+							String sector = path[1];
+							String type = path[2];
+							String model = path[3];
+							String MAC = path[4];
 							
-							@SuppressWarnings("unused")
-							CoapObserveRelation sensorRelation = sensorClient.observe(req,
-								new SensorCoapHandler(topic.topic, topic.cf) {
-									
-									public void onLoad(CoapResponse response) {
-										String content = response.getResponseText();
-										if(response.getCode() == ResponseCode.CONTENT) {
-											//Update corresponding container with the retrieved content
-											System.out.println("[INFO] Update received for topic " + this.topic + " value: " + content);
-											
-											publishSensor.add(new CI(topic, content));
-										}else {
-											System.out.println("[WARN] Response from observing sensor: " + response.getCode());
+							//Create the containers for this device on OneM2M
+							
+							try {
+								middle_node.createContainer(AE_name, sector);	//create the Sector container
+							}catch(Exception e) {
+								System.out.println("[WARN] Failure creating sector container: " + e);
+							}
+							
+							try {
+								middle_node.createContainer(AE_name + "/" + sector, type);	//Create the type container
+							}catch(Exception e) {
+								System.out.println("[WARN] Failure creating type container: " + e);
+							}
+							
+							try {
+								middle_node.createContainer(AE_name + "/" + sector + "/" + type, model);
+							}catch(Exception e) {
+								System.out.println("[WARN] Failure creating model container: " + e);
+							}
+							
+							try {
+								middle_node.createContainer(AE_name + "/" + sector + "/" + type + "/" + model, MAC);	//create the device container
+							}catch(Exception e) {
+								System.out.println("[WARN] Failure creating MAC container: " + e);
+							}
+							
+							if(type.equals("sensor")) {
+								//devices.addSensor(MAC, sector);	//TODO: check if can be avoided
+								//Is a sensor --> I also have to subscribe to this topic
+								CoapClient sensorClient = new CoapClient(broker_uri + "/ps/" + MAC);
+								System.out.println("[INFO] Observing: " + broker_uri + "/ps/" + MAC);
+								Request req = new Request(Code.GET);
+								req.getOptions().setAccept(MediaTypeRegistry.TEXT_PLAIN);
+								req.setObserve();
+								req.setURI(sensorClient.getURI());
+								
+								@SuppressWarnings("unused")
+								CoapObserveRelation sensorRelation = sensorClient.observe(req,
+									new SensorCoapHandler(fullpath, topic.cf) {
+										
+										public void onLoad(CoapResponse response) {
+											String content = response.getResponseText();
+											if(response.getCode() == ResponseCode.CONTENT) {
+												//Update corresponding container with the retrieved content
+												System.out.println("[INFO] Update received for topic " + this.topic + " value: " + content);
+												
+												publishSensor.add(new CI(topic, content));
+											}else {
+												System.out.println("[WARN] Response from observing sensor: " + response.getCode());
+											}
+										}
+										
+										public void onError() {
+											System.err.println("[ERROR] Error on observing topic " + this.topic);
+										}
+									});
+								System.out.println("[INFO] Created observing relation with " + model + " sensor " + MAC);
+							}else {
+								//devices.addActuator(MAC, sector);	//Todo: check if can be avoided
+								//Is an actuator --> subscribe to the container just created
+								//create a resource in the CoapMonitor to handle updates of this container
+								
+								Resource res = server.getRoot();
+								Resource parent;
+								for(int i = 0; i < 5; i++) {
+									parent = res;
+									Iterator<Resource> childrens = res.getChildren().iterator();
+									while(childrens.hasNext()) {
+										Resource child = childrens.next();
+										if(child.getName().equals(path[i])) {
+											res = child;
+											//Subpath exists
 										}
 									}
 									
-									public void onError() {
-										System.err.println("[ERROR] Error on observing topic " + this.topic);
-									}
-								});
-							System.out.println("[INFO] Created observing relation with " + model + " sensor " + MAC);
-						}else {
-							//devices.addActuator(MAC, sector);	//Todo: check if can be avoided
-							//Is an actuator --> subscribe to the container just created
-							//create a resource in the CoapMonitor to handle updates of this container
-							
-							Resource res = server.getRoot();
-							Resource parent;
-							for(int i = 0; i < 5; i++) {
-								parent = res;
-								Iterator<Resource> childrens = res.getChildren().iterator();
-								while(childrens.hasNext()) {
-									Resource child = childrens.next();
-									if(child.getName().equals(path[i])) {
-										res = child;
-										//Subpath exists
+									if(res == parent) {
+										Resource tmp;
+										if(i == 4) {
+											//Topic is MAC
+											tmp = new CoapResource(MAC) {
+												@SuppressWarnings("unused")	//Is used remotely
+												public void handlePOST(CoapExchange exchange){
+													exchange.respond(ResponseCode.CREATED);
+													String payload = exchange.getRequestText();
+													System.out.println("[DEBUG] actuator update: " + payload);
+													
+													DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+												    DocumentBuilder builder;
+													try {
+														builder = factory.newDocumentBuilder();
+														InputSource is = new InputSource(new StringReader(payload));
+														Document xmlDoc = builder.parse(is);
+														NodeList conList = xmlDoc.getElementsByTagName("con");
+														if(conList.getLength() == 1) {
+															String val = conList.item(0).getTextContent();
+															System.out.println("[DEBUG] actuator new value: " + val);
+															broker.publish("/ps/" + this.getName(), val);	//publish the update 
+														}
+													} catch (ParserConfigurationException e) {
+														System.err.println("[ERROR] Error creating DocumentBuilder for XML");
+													} catch (SAXException e) {
+														//Error parsing XML document
+														System.err.println("[ERROR] Error parsing XML document: " + e.getMessage());
+													} catch (IOException e) {
+														//IO error parsing XML document
+														System.err.println("[ERROR] I/O error: " + e.getMessage());
+													}
+												}
+											};
+										}else {
+											tmp = new CoapResource(path[i]);
+										}
+										res.add(tmp);
+										res = tmp;	//Update exploring resource
 									}
 								}
 								
-								if(res == parent) {
-									Resource tmp;
-									if(i == 4) {
-										//Topic is MAC
-										tmp = new CoapResource(MAC) {
-											@SuppressWarnings("unused")	//Is used remotely
-											public void handlePOST(CoapExchange exchange){
-												exchange.respond(ResponseCode.CREATED);
-												String payload = exchange.getRequestText();
-												System.out.println("[DEBUG] actuator update: " + payload);
-												
-												DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-											    DocumentBuilder builder;
-												try {
-													builder = factory.newDocumentBuilder();
-													InputSource is = new InputSource(new StringReader(payload));
-													Document xmlDoc = builder.parse(is);
-													NodeList conList = xmlDoc.getElementsByTagName("con");
-													if(conList.getLength() == 1) {
-														String val = conList.item(0).getTextContent();
-														System.out.println("[DEBUG] actuator new value: " + val);
-														broker.publish("/ps" + this.getPath() + this.getName(), val);	//publish the update 
-													}
-												} catch (ParserConfigurationException e) {
-													System.err.println("[ERROR] Error creating DocumentBuilder for XML");
-												} catch (SAXException e) {
-													//Error parsing XML document
-													System.err.println("[ERROR] Error parsing XML document: " + e.getMessage());
-												} catch (IOException e) {
-													//IO error parsing XML document
-													System.err.println("[ERROR] I/O error: " + e.getMessage());
-												}
-											}
-										};
-									}else {
-										tmp = new CoapResource(path[i]);
-									}
-									res.add(tmp);
-									res = tmp;	//Update exploring resource
+								//Subscribe to the given topic on the MN, the resource that will handle updates have the same name of topic
+								try {
+									middle_node.subscribe(fullpath, String.valueOf(PORT), "Service_AE/" + sector + "/" + type + "/" + model + "/" + MAC);
+									System.out.println("[INFO] Subscribed to actuator container " + fullpath);
+								} catch (Exception e) {
+									System.err.println("[ERROR] " + e.getMessage());
 								}
 							}
-							
-							System.out.println("MAC: " + MAC);
-							middle_node.subscribe(topic.topic, String.valueOf(PORT), "Service_AE/" + sector + "/" + type + "/" + model + "/" + MAC);	//Subscribe to the given topic on the MN, the resource that will handle updates have the same name of topic
 						}
 					}
 				}

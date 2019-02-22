@@ -26,7 +26,7 @@ public class RootResource extends CoapResource{
 		super(name);
 		this.setObservable(true);
 		
-		loadAssociation();
+		//loadAssociation();
 		
 		//CREATE TOPICS FOR TESTING
 		/*this.add(new TopicResource("Service_AE/Sector1/sensor/humidity/AY5CS34", MediaTypeRegistry.APPLICATION_JSON));
@@ -34,8 +34,10 @@ public class RootResource extends CoapResource{
 		TopicResource Pippo = new TopicResource("pippo", MediaTypeRegistry.APPLICATION_JSON)
 		this.add(Pippo);*/
 		//this.add(new CoapResource("Service_AE").add(new CoapResource("Sector1").add(new CoapResource("sensor").add(new CoapResource("humidity").add(new TopicResource("AY5CS34", MediaTypeRegistry.TEXT_PLAIN))))));
-		this.add(new CoapResource("Service_AE").add(new CoapResource("Sector2").add(new CoapResource("actuator").add(new CoapResource("irrigator").add(new TopicResource("TJ8XG95", MediaTypeRegistry.TEXT_PLAIN))))));
-		this.getChild("Service_AE").add(new CoapResource("Sector1").add(new CoapResource("sensor").add(new CoapResource("humidity").add(new TopicResource("AY5CS34", MediaTypeRegistry.TEXT_PLAIN)))));
+		//this.add(new CoapResource("Service_AE").add(new CoapResource("Sector2").add(new CoapResource("actuator").add(new CoapResource("irrigator").add(new TopicResource("TJ8XG95", MediaTypeRegistry.TEXT_PLAIN))))));
+		//this.getChild("Service_AE").add(new CoapResource("Sector1").add(new CoapResource("sensor").add(new CoapResource("humidity").add(new TopicResource("AY5CS34", MediaTypeRegistry.TEXT_PLAIN)))));
+		this.add(new TopicResource("AY5CS34", MediaTypeRegistry.TEXT_PLAIN));
+		this.add(new TopicResource("temp_sens1", MediaTypeRegistry.TEXT_PLAIN));
 	}
 	
 	private void loadAssociation() {
@@ -95,7 +97,26 @@ public class RootResource extends CoapResource{
 		
 		System.out.println("[DEBG] Received POST request from " + exchange.getSourceAddress().getHostAddress() + " payload: " + request);
 		
-		if(path.length == 1) {
+		boolean exist = false;
+		
+		Iterator it = this.getChildren().iterator();
+		while(it.hasNext()) {
+			Resource child = (Resource) it.next();
+			if(child.getName().equals(topic)) {
+				exist = true;
+				break;
+			}
+		}
+		
+		if(exist == true) {
+			exchange.respond(ResponseCode.FORBIDDEN);
+		}else {
+			this.add(new TopicResource(topic, ct));
+			exchange.respond(ResponseCode.CREATED);
+			this.notifyObserverRelations(null);
+		}
+		
+		/*if(path.length == 1) {
 			//topic to configure a specific device
 			String MAC = path[0];
 			this.add(new TopicResource(MAC, MediaTypeRegistry.TEXT_PLAIN));
@@ -153,7 +174,8 @@ public class RootResource extends CoapResource{
 			}else {
 				exchange.respond(ResponseCode.BAD_REQUEST);	//TODO: check
 			}
-		}
+		}*/
+		
 	}
 	
 	public void handleGET(CoapExchange exchange) {
@@ -163,6 +185,12 @@ public class RootResource extends CoapResource{
 		Iterator<Resource> it = this.getChildren().iterator();
 		while(it.hasNext()) {
 			Resource res = it.next();
+			
+			JSONObject topicObj = new JSONObject();
+			topicObj.put("topic", res.getName());
+			topicObj.put("cf", ((TopicResource) res).contentType);
+			topics.put(topicObj);
+			/*
 			if(res.getName().equals("Service_AE")) {
 				Iterator<Resource> it_sect = res.getChildren().iterator();
 				while(it_sect.hasNext()) {
@@ -186,6 +214,8 @@ public class RootResource extends CoapResource{
 					}
 				}
 			}
+			*/
+			
 		}
 		jsonPayload.put("topics", topics);
 		exchange.respond(ResponseCode.CONTENT, jsonPayload.toString());

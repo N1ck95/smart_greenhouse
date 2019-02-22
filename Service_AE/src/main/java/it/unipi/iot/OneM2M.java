@@ -40,10 +40,7 @@ public class OneM2M {
 		
 		CoapResponse response = client.advanced(request);
 		
-		if(ResponseCode.isSuccess(response.getCode())) {
-			//System.out.println("Response: " + response.getResponseText());
-		}else {
-			System.err.println("Error creating the ApplicationEntity: " + response.getResponseText());
+		if(ResponseCode.isSuccess(response.getCode()) == false) {
 			throw new Exception("Error: " + response.getResponseText());
 		}
 	}
@@ -69,21 +66,13 @@ public class OneM2M {
 		
 		CoapResponse response = client.advanced(request);
 		
-		if(ResponseCode.isSuccess(response.getCode())) {
-			/*System.out.println(response.getResponseText());
-			JSONObject respJSON = new JSONObject(response.getResponseText());
-			String la = ((JSONObject) respJSON.get("m2m:cnt")).get("la").toString();
-			System.out.println("Last data path: " + la);*/
-		}else {
-			//System.err.println("Error creating the container: " + response.getResponseText());
+		if(ResponseCode.isSuccess(response.getCode()) == false) {
 			throw new Exception("Error creating container: " + response.getResponseText());
 		}
 	}
 	
 	public void publishContentInstance(String path, String value) {
 		CoapClient client = new CoapClient(this.node_ip + "/~/" + this.node_id + "/" + this.node_name + "/" + path);
-		//System.out.println("Value to publish on MN: " + value);
-		//System.out.println("Publish on: " + path);
 		
 		//Create the new payload
 		JSONObject payload = new JSONObject();
@@ -106,11 +95,9 @@ public class OneM2M {
 		if(response.isSuccess()) {
 			//Successfull
 		}
-		
-		//System.out.println("Response: " +response.getResponseText());
 	}
 	
-	public void subscribe(String path, String serverPort, String resource) {
+	public void subscribe(String path, String serverPort, String resource) throws Exception {
 		CoapClient client = new CoapClient(this.node_ip + "/~/" + this.node_id + "/" + this.node_name + "/" + path);
 		
 		Request request = new Request(Code.POST);
@@ -123,18 +110,14 @@ public class OneM2M {
 		
 		obj.put("rn", "Monitor");
 		obj.put("nu", "coap://" + this.node_ip + ":" + serverPort + "/" + resource);
-		//System.out.println("Subscribe relation resource: " + resource);
 		obj.put("nct", 2);
 		payload.put("m2m:sub", obj);
 		
 		request.setPayload(payload.toString());
-		//System.out.println(payload.toString());
 		
 		CoapResponse resp = client.advanced(request);
-		if(resp.isSuccess()) {
-			//Successful subscribe
+		if(resp.isSuccess() == false) {
+			throw new Exception("error subscribing to resource " + path + " error: " + resp.getResponseText());
 		}
-		//TODO: add check on the response
-		//System.out.println(resp.getResponseText());
 	}
 }
