@@ -27,7 +27,7 @@ public class TopicResource extends CoapResource{
 		//Publish request
 		int ct = exchange.getRequestOptions().getContentFormat();
 		System.out.println("Received PUT request");
-		if(exchange.getRequestOptions().isContentFormat(this.contentType)) {
+		if(exchange.getRequestOptions().isContentFormat(this.contentType) || exchange.getRequestOptions().hasContentFormat() == false) {
 			this.value = exchange.getRequestText();
 			exchange.respond(ResponseCode.CHANGED);
 			this.notifyObserverRelations(null);
