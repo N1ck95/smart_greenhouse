@@ -6,11 +6,9 @@ import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.coap.CoAP.Code;
-import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.OptionSet;
 import org.eclipse.californium.core.coap.Request;
-import org.eclipse.californium.core.coap.Response;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 
 public class DevicesResource extends CoapResource{
@@ -23,6 +21,7 @@ public class DevicesResource extends CoapResource{
 		topics = new ArrayList<String>();
 	}
 	
+	@Override
 	public void handleGET(CoapExchange exchange) {
 		OptionSet options = exchange.getRequestOptions();
 		Integer observe = options.getObserve();

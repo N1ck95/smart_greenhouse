@@ -1,13 +1,10 @@
 package it.unipi.it;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -83,6 +80,7 @@ public class RootResource extends CoapResource{
 		return null;
 	}
 	
+	@Override
 	public void handlePOST(CoapExchange exchange) {
 		//Create request have a payload forletemat: "<topic>;ct=content_format" 
 		//where topic is the name of the topic to create
@@ -178,6 +176,7 @@ public class RootResource extends CoapResource{
 		
 	}
 	
+	@Override
 	public void handleGET(CoapExchange exchange) {
 		System.out.println("GET REQUEST");
 		JSONObject jsonPayload = new JSONObject();
