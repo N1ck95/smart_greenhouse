@@ -66,44 +66,36 @@ public class App
 	}
 	
     public static void main( String[] args ) throws InterruptedException{
-    	App ctrl_app = new App();
-    	CoapServer server = new CoapServer(5685);
     	
+    	//create the application needed for managing the security and control in the middle node
+    	App ctrl_app = new App();
+    	//create the coap server needed for the subscription
+    	CoapServer server = new CoapServer(5685);
+    	//create an instance that provides methods needed by the application entities
     	final AE_Control adn = new AE_Control();
     	//create applications entities for control and security
 		AE ae = adn.createAE_Control("coap://127.0.0.1:5683/~/" + middle_id, "ControlApp-ID", "Control_AE");
-		//AE ae_security = adn.createAE_Control("coap://127.0.0.1:5683/~/mn-cse", "SecurityApp-ID", "Security_AE");
-		AE ae_prova = adn.createAE_Control("coap://127.0.0.1:5683/~/" + middle_id, "provaApp-ID", "Prova_AE");
-		//create containers to test the application(in fact these containers are unneeded, they are just for test
+		AE ae_security = adn.createAE_Control("coap://127.0.0.1:5683/~/mn-cse", "SecurityApp-ID", "Security_AE");
+		
+		//create containers 
 		adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name, "Sector1");
 		adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + "Sector1", "Sensor");
 		adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + "Sector1" + "/Sensor", "Humid");
 		adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + "Sector1" + "/Sensor/Humid", "Sensor0");
 		adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + "Sector1" + "/Sensor/Humid/Sensor0", "10");
 		adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Service_AE" + "/" + "Sector1" + "/sensor/temperature/temp_sens1", "10");
-		/*adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE", "Sector2");
-		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector2", "Sensor");
-		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector2/Sensor", "Temp");
-		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector2/Sensor/Temp", "Sensor0");
-		adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector2/Sensor/Temp/Sensor0", "8");
-		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector1", "Actuators");
-		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector1/Actuators", "Irrigators");
-		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector1/Actuators/Irrigators", "Irrigator0");
-		adn.createContainer("coap://127.0.0.1:5683/~/mn-cse/mn-name/Prova_AE/Sector1/Actuators/Irrigators", "Irrigator1");*/
+
 		
 		
 		Integer i = new Integer(0);
 		
 		Integer num_resources_mn = new Integer(0);//number of resources i.e paths returned by the discovery
-		//String[] resources_paths_mn = new String[100];
-		//String[] resources_mn_full_path_mn = new String[100];
-		 List<String> resources_paths_mn = new ArrayList<String>();
-		 List<String> actuators_paths_mn = new ArrayList<String>();
-		 List<String> resources_paths_mn_security = new ArrayList<String>();
-		 List<String> discovery = new ArrayList<String>();
-		 List<String> resources_mn_full_path_mn = new ArrayList<String>();
-		//the service_ae is created by niccolo, i dont create it, i just do a discovery of its resources
-		//the argument in the discovery should be just the port of the middle node without the service_ae or with it?
+		
+		List<String> resources_paths_mn = new ArrayList<String>();
+		List<String> actuators_paths_mn = new ArrayList<String>();
+		List<String> discovery = new ArrayList<String>();
+		
+		
 		//perform the discovery
 		try {
 			discovery = adn.Discovery("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Service_AE");//this is the port of the middle node?
@@ -112,7 +104,7 @@ public class App
 			System.out.println("[INFO] Terminating program");
 			System.exit(1);
 		}
-		
+		//print the first element of the discovery for test
 		System.out.println(discovery.get(0));
 		num_resources_mn = discovery.size();
 		System.out.println("[DEBUG] num of resources: " + num_resources_mn);
@@ -152,12 +144,7 @@ public class App
 		
 		System.out.println("[INFO] number of sectors: " + sectors.size());
 		
-		//Container control_app_cont = new Container();
-		//control_app_cont = adn.createContainer("coap://127.0.0.1:5684/~/mn-cse/mn-name/Control_AE");
-		//mi sottoscrivo sul coap monitor server per tutti i contenitori dal applicazione dei servizi(quelli che mi servono)
-		//quelli che mi servono per laplication entity del control sono tutti aparte di contenitore per la camera e per il pir
-		//quelli che mi servono per laplicazione del control sono i contenitori della camera e del pir
-		//post per tutti i contenitori con il payload settato 
+		//create lists for the target values for each physical quantity
 		
 		List<String> target_temp = new ArrayList<String>();
 		List<String> target_humid = new ArrayList<String>();
@@ -166,15 +153,19 @@ public class App
 		
 
 		int num_sectors = sectors.size();
-
+		
 		String target;
-		Scanner reader = new Scanner(System.in);  // Reading from System.in
+		Scanner reader = new Scanner(System.in);  // Reading from System.in the target values
 		for(i = 0;i < num_sectors; i++) {
 			System.out.println("Enter the target temp for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			sectors.get(i).targetTemp = Integer.parseInt(target);
 			System.out.println("Target temp is " + target);
+			
+			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName, "TargetTemp");
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/" + "TargetTemp", target);
 			//Create resource to receive notifications about target temperature changes
+			
 			server.add(new CoapResource(sectors.get(i).sectorName).add(new CoapResource("targetTemperature") {
 				
 				public void handlePOST(CoapExchange exchange) {
@@ -191,6 +182,10 @@ public class App
 			System.out.println("Enter the target humidity for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_humid.add(target);
+			
+			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName, "TargetHumid");
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/" + "TargetHumid", target);
+			
 			//Create resource to receive notifications about target humidity changes
 			server.add(new CoapResource(sectors.get(i).sectorName).add(new CoapResource("targetHumidity") {
 				
@@ -209,6 +204,10 @@ public class App
 			System.out.println("Enter the target light for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_light.add(target);
+			
+			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName, "TargetLight");
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/" + "TargetLight", target);
+			
 			//Create resource to receive notifications about target light changes
 			server.add(new CoapResource(sectors.get(i).sectorName).add(new CoapResource("targetLight") {
 				
@@ -227,6 +226,9 @@ public class App
 			System.out.println("Enter the target soil moisture for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_soilmoist.add(target);
+			
+			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName, "TargetSoilMoist");
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + "/" + sectors.get(i).sectorName + "/" + "TargetSoilMoist", target);
 			//Create resource to receive notifications about target light changes
 			server.add(new CoapResource(sectors.get(i).sectorName).add(new CoapResource("targetSoil") {
 				
@@ -243,7 +245,8 @@ public class App
 			
 		}
 		reader.close();
-				
+		
+		//subscribe to the target containers		
 		for (i = 0; i< num_sectors ;i++) {
 			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name, sectors.get(i).sectorName);
 			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name + sectors.get(i).sectorName, "TargetTemp");
@@ -276,6 +279,7 @@ public class App
 				System.err.println("[ERROR] Fail to subscribe to TargetSoil: " + e.getMessage());
 			}
 			
+			//populate the corresponding lists for actuators for each sector
 			sectors.get(i).fans = new ArrayList<String>();
 			sectors.get(i).irrigators_soilm = new ArrayList<String>();
 			sectors.get(i).irrigators_humid = new ArrayList<String>();
@@ -310,8 +314,8 @@ public class App
 			
 			//create movement status containers in the security ae 
 			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Security_AE", sectors.get(i).sectorName);
-			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Security_AE" + sectors.get(i).sectorName + "/", "MovementAlarmStatus");
-			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Security_AE" + sectors.get(i).sectorName + "/", "FireAlarmStatus");
+			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Security_AE" + "/" + sectors.get(i).sectorName, "MovementAlarmStatus");
+			adn.createContainer("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + "Security_AE" + "/" + sectors.get(i).sectorName, "FireAlarmStatus");
 		}
 		System.out.println("[INFO] local target and status containers setup completed");
 		
