@@ -1,8 +1,13 @@
 package it.unipi.it;
 
 import java.net.InetSocketAddress;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Set;
+
 import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.core.network.CoapEndpoint;
+import org.eclipse.californium.core.server.resources.Resource;
 
 public class Broker extends CoapServer{
 	final static int PORT = 6001;		//Port used by the Broker service

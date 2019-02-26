@@ -2,6 +2,7 @@ package it.unipi.it;
 
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
+import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 
 public class TopicResource extends CoapResource{
@@ -22,7 +23,6 @@ public class TopicResource extends CoapResource{
 		value = null;
 	}
 	
-	@Override
 	public void handlePUT(CoapExchange exchange) {
 		//Publish request
 		int ct = exchange.getRequestOptions().getContentFormat();
@@ -38,7 +38,6 @@ public class TopicResource extends CoapResource{
 		}
 	}
 	
-	@Override
 	public void handleGET(CoapExchange exchange) {
 		//Read request
 		if(value == null) {
@@ -57,7 +56,6 @@ public class TopicResource extends CoapResource{
 		}
 	}
 	
-	@Override
 	public void handleDELETE(CoapExchange exchange) {
 		//Remove request
 		this.delete();
