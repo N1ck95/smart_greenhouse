@@ -129,7 +129,7 @@ public class AE_CONTROL_IN {
 			}
 			if(exists == false) {
 				System.out.println(resources_paths_mn.get(i));
-				System.out.println(subpaths[0]);
+				System.out.println("subpath is " + subpaths[0]);
 				sectors.add(new Sector(subpaths[0]));
 			}
 		}
@@ -220,22 +220,23 @@ public class AE_CONTROL_IN {
 			System.out.println("Enter the target temp for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_temp.add(target);
-			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + "Sector" + i + "/TargetTemp", target);
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + sectors.get(i).sectorName + "/TargetTemp", target);
 			
 			System.out.println("Enter the target humidity for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_humid.add(target);
-			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + "Sector" + i + "/TargetHumid", target);
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + sectors.get(i).sectorName + "/TargetHumid", target);
 			
 			System.out.println("Enter the target light for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_light.add(target);
-			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + "Sector" + i + "/TargetLight", target);
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + sectors.get(i).sectorName + "/TargetLight", target);
 			
 			System.out.println("Enter the target soil moisture for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_soilmoist.add(target);
-			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + "Sector" + i + "/TargetSoilMoist", target);
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + sectors.get(i).sectorName + "/TargetSoilMoist", target);
+			
 		}
 		
 		reader.close();
@@ -328,7 +329,7 @@ public class AE_CONTROL_IN {
 			    	//this is also the name of the resource right? yes
 			    	System.out.println(path_resource);
 			    	System.out.println(exchange.getRequestText());
-			        System.out.println("received notific");
+			        System.out.println("[INFO IN_NODE] received notification");
 			      
 			        //parse the published value
 			        
@@ -345,7 +346,7 @@ public class AE_CONTROL_IN {
 								Element con = (Element) p;
 								System.out.println(con.getTextContent());
 								val = Integer.parseInt(con.getTextContent());
-								System.out.println("[INFO] valore e "+val);
+								System.out.println("[INFO IN_NODE] received notification value is "+val);
 								
 								String[] subpaths = path_resource.split("/");
 								String sector = subpaths[0];
