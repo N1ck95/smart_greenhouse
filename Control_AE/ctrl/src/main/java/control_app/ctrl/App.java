@@ -588,7 +588,8 @@ public class App
 			}
 			
 			//Publish content instance to test the system
-			adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/Sector1/sensor/temperature/temp_sens1" , "15");
+			//adn.createContentInstance("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/Sector1/sensor/temperature/temp_sens1" , "15");
+			
 			Thread.sleep(2000);	//Sleep for 2 second to avoid wasting resources
 		}
 		

@@ -36,8 +36,10 @@ public class RootResource extends CoapResource{
 		//this.add(new CoapResource("Service_AE").add(new CoapResource("Sector1").add(new CoapResource("sensor").add(new CoapResource("humidity").add(new TopicResource("AY5CS34", MediaTypeRegistry.TEXT_PLAIN))))));
 		//this.add(new CoapResource("Service_AE").add(new CoapResource("Sector2").add(new CoapResource("actuator").add(new CoapResource("irrigator").add(new TopicResource("TJ8XG95", MediaTypeRegistry.TEXT_PLAIN))))));
 		//this.getChild("Service_AE").add(new CoapResource("Sector1").add(new CoapResource("sensor").add(new CoapResource("humidity").add(new TopicResource("AY5CS34", MediaTypeRegistry.TEXT_PLAIN)))));
-		this.add(new TopicResource("AY5CS34", MediaTypeRegistry.TEXT_PLAIN));
-		this.add(new TopicResource("temp_sens1", MediaTypeRegistry.TEXT_PLAIN));
+		
+		
+		//this.add(new TopicResource("AY5CS34", MediaTypeRegistry.TEXT_PLAIN));
+		//this.add(new TopicResource("temp_sens1", MediaTypeRegistry.TEXT_PLAIN));
 	}
 	
 	private void loadAssociation() {
