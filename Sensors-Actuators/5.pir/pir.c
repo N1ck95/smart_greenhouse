@@ -17,7 +17,7 @@
 
 #define REMOTE_PORT  UIP_HTONS(6001)
 
-#define TOGGLE_INTERVAL 10															//transmission interval
+#define TOGGLE_INTERVAL 2															//transmission interval
 
 #define CT 0																		//content type
 
@@ -134,7 +134,7 @@ PROCESS_THREAD(client, ev, data){													//client process start
 			}
 			else if(publish==1){													
 				
-					etimer_set(&et, 2 * CLOCK_SECOND);
+					
 
 					if (message_number>=0 && message_number<5) 						//morning
 				      temp=0;

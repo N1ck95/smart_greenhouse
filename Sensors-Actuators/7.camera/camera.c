@@ -17,7 +17,7 @@
 
 #define REMOTE_PORT  UIP_HTONS(6001)
 
-#define TOGGLE_INTERVAL 20															//transmission interval
+#define TOGGLE_INTERVAL 50															//transmission interval
 
 #define CT 0																		//content type
 
@@ -38,7 +38,7 @@ static int publish;
 																													
 static int working;
 
-static int frequency;
+
 
 
 //----------------------------------MESSAGES AND URI CONFIGURATION-----------------------------------------------------------------------------------------------//
@@ -48,10 +48,9 @@ static char *publish_uri="/ps/00-00-00-00-00-07";
 
 static unsigned int message_number;														
 
-static char *subscribe_uri="/ps/00-00-00-00-00-05";																	
+																	
 
-//----------------------------------OBSERVING--------------------------------------------------------------------------------------------------------------------//
-static coap_observee_t *obs;															//observe relationship variable
+
 
 
 //----------------------------------RESPONSE CALLBACK HANDLERS---------------------------------------------------------------------------------------------------//
@@ -82,70 +81,7 @@ void tx_handler(void *response){													//response handler for data trasmis
 }
 
 
-//----------------------------------NOTIFICATION CALLBACK FOR OBSERVING------------------------------------------------------------------------------------------//
 
-
-static void notification_callback(coap_observee_t *obs, void *notification, coap_notification_flag_t flag)
-{
-  int len = 0;
-  const uint8_t *payload = NULL;
-
-  printf("Notification handler\n");
-  printf("Observee URI: %s\n", obs->url);
-  
-  if(notification) {
-    len = coap_get_payload(notification, &payload);
-  }
-
-  //(void)len;
-
-  switch(flag) {
-  case NOTIFICATION_OK:
-    printf("NOTIFICATION OK: %*s\n", len, (char *)payload);
-    
-   
-    if (*payload == '1') {
-        frequency=1;
-        printf("CAMERA SAMPLING:1 pict/sec");
-      } else {
-        frequency=50;
-        printf("CAMERA SAMPLING:1 pict/50sec");
-      }															
-       
-    break;
-  
-  case OBSERVE_OK: /* server accepted observation request */
-    printf("OBSERVE_OK: %*s\n", len, (char *)payload);
-
-    	 
-    if (*payload == '1') {
-        frequency=1;
-        printf("CAMERA SAMPLING:1 pict/sec");
-      } else {
-        frequency=50;
-        printf("CAMERA SAMPLING:1 pict/50sec");
-      }				
-
-    break;
-  
-  case OBSERVE_NOT_SUPPORTED:
-    printf("OBSERVE_NOT_SUPPORTED: %*s\n", len, (char *)payload);
-    obs = NULL;
-    break;
-  
-  case ERROR_RESPONSE_CODE:
-    printf("ERROR_RESPONSE_CODE2: %*s\n", len, (char *)payload);
-    obs = NULL;
-    break;
-  
-  case NO_REPLY_FROM_SERVER:
-    printf("NO_REPLY_FROM_SERVER: "
-           "removing observe registration with token %x%x\n",
-           obs->token[0], obs->token[1]);
-    obs = NULL;
-    break;
-  }
-}
 
 //----------------------------------THREAD-----------------------------------------------------------------------------------------------------------------------//
 PROCESS_THREAD(client, ev, data){													//client process start
@@ -168,7 +104,7 @@ PROCESS_THREAD(client, ev, data){													//client process start
 
 	message_number=0;
 
-	frequency=50;																		
+																			
 
 	printf("PROCESS STARTED\n");
 
@@ -198,13 +134,12 @@ PROCESS_THREAD(client, ev, data){													//client process start
 					COAP_BLOCKING_REQUEST(&server_ipaddr, REMOTE_PORT, 
 					request, reg_handler);											// POST /sectorx/sensor/temperature/sensor-local-id; ct=**
 
-					obs = coap_obs_request_registration(&server_ipaddr, REMOTE_PORT,
-					subscribe_uri, notification_callback, NULL);
+					
 										
 			}
 			else if(publish==1){													
 				
-					etimer_set(&et, frequency * CLOCK_SECOND);
+					
 					
 				    char msg[9];													
 

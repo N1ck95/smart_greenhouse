@@ -134,7 +134,7 @@ PROCESS_THREAD(client, ev, data){													//client process start
 			}
 			else if(publish==1){
 
-					etimer_set(&et, 10 * CLOCK_SECOND);													
+														
 				
 					if (message_number>=0 && message_number<5) 						//morning
 				      temp=654;
