@@ -93,7 +93,6 @@ public class AE_CONTROL_IN {
 			System.out.println("[INFO] Terminating program");
 			System.exit(1);
 		}
-		//print the first part for test
 		System.out.println(discovery.get(0));
 		//get the total number of resources returned by the discovery
 		num_resources_mn = discovery.size();
@@ -130,7 +129,7 @@ public class AE_CONTROL_IN {
 			}
 			if(exists == false) {
 				System.out.println(resources_paths_mn.get(i));
-				System.out.println("subpath is " + subpaths[0]);
+				System.out.println(subpaths[0]);
 				sectors.add(new Sector(subpaths[0]));
 			}
 		}
@@ -142,7 +141,7 @@ public class AE_CONTROL_IN {
 			String sector = subpaths[0];
 			System.out.println(type);
 			System.out.println(resources_paths_mn.get(i));
-			//assuming there are no duplicates in the paths of the sensors
+			//i assume there are no duplicates in the paths of the sensors
 			if (type.equals("temperature")) {
 				for (k=0;k<sectors.size();k++) {
 					if (sector.equals(sectors.get(k).sectorName)) {
@@ -203,7 +202,6 @@ public class AE_CONTROL_IN {
 			}
 			
 		}
-		//test a list of a particular sensor
 		System.out.println(sectors.get(0).temp_sens.get(0));
 		
 		//create lists for target values for the physical quantities temperature, humidity, light and soil moistiure					
@@ -222,23 +220,22 @@ public class AE_CONTROL_IN {
 			System.out.println("Enter the target temp for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_temp.add(target);
-			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + sectors.get(i).sectorName + "/TargetTemp", target);
-			
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + sectors.get(i).sectorName + "/"+ "TargetTemp", target);
+			System.out.println("in node prompt"+"coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + sectors.get(i).sectorName + "/"+ "TargetTemp");
 			System.out.println("Enter the target humidity for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_humid.add(target);
-			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + sectors.get(i).sectorName + "/TargetHumid", target);
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + sectors.get(i).sectorName + "/"+ "TargetHumid", target);
 			
 			System.out.println("Enter the target light for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_light.add(target);
-			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + sectors.get(i).sectorName + "/TargetLight", target);
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + sectors.get(i).sectorName + "/"+ "TargetLight", target);
 			
 			System.out.println("Enter the target soil moisture for sector " + sectors.get(i).sectorName);
 			target = reader.next();
 			target_soilmoist.add(target);
-			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + sectors.get(i).sectorName + "/TargetSoilMoist", target);
-			
+			adn.createContentInstance("coap://127.0.0.1:5683/~/" + middle_id + "/" + middle_name + "/" + AE_name_control_MN + "/" + sectors.get(i).sectorName + "/"+ "TargetSoil", target);
 		}
 		
 		reader.close();
@@ -299,14 +296,7 @@ public class AE_CONTROL_IN {
 				sens_name = sub_p[3];
 				adn.createContainer("coap://127.0.0.1:5684/~/in-cse/in-name" + "/" + AE_IN_name_security + "/" + sectors.get(i).sectorName + "/" + "Movement",sens_name );
 			}
-			
-			adn.createContainer("coap://127.0.0.1:5684/~/in-cse/in-name" + "/" + AE_IN_name_security + "/" + sectors.get(i).sectorName + "/", "Smoke");
-			for(j = 0; j < sectors.get(i).smoke_sens.size();j++) {
-				sub_p = sectors.get(i).smoke_sens.get(j).split("/");
-				sens_name = sub_p[3];
-				adn.createContainer("coap://127.0.0.1:5684/~/in-cse/in-name" + "/" + AE_IN_name_security + "/" + sectors.get(i).sectorName + "/" + "Smoke",sens_name );
-			}
-			
+						
 			adn.createContainer("coap://127.0.0.1:5684/~/in-cse/in-name" + "/" + AE_IN_name_security + "/" + sectors.get(i).sectorName + "/", "Camera");
 			for(j = 0; j < sectors.get(i).cam_sens.size();j++) {
 				sub_p = sectors.get(i).cam_sens.get(j).split("/");
@@ -333,11 +323,12 @@ public class AE_CONTROL_IN {
 			server.add(new CoapResource(parts[0]).add(new CoapResource(parts[1]).add(new CoapResource(parts[2]).add(new CoapResource(parts[3]) {
 				
 				public void handlePOST(CoapExchange exchange) {
-			    	String path_resource = exchange.getRequestOptions().getUriPathString();//this returns the path of the resource in the coap server(monitor)
-			    	//print info
+			    	String path_resource = exchange.getRequestOptions().getUriPathString();//in the case of the lab04 exercise this returns the path of the resource in the coap server(monitor)
+			    	//in fact it returned monitor because we only had one resource whose name was monitor
+			    	//this is also the name of the resource right? yes
 			    	System.out.println(path_resource);
 			    	System.out.println(exchange.getRequestText());
-			        System.out.println("[INFO IN_NODE] received notification");
+			        System.out.println("received notific");
 			      
 			        //parse the published value
 			        
@@ -354,7 +345,7 @@ public class AE_CONTROL_IN {
 								Element con = (Element) p;
 								System.out.println(con.getTextContent());
 								val = Integer.parseInt(con.getTextContent());
-								System.out.println("[INFO IN_NODE] received notification value is "+val);
+								System.out.println("[INFO] valore e "+val);
 								
 								String[] subpaths = path_resource.split("/");
 								String sector = subpaths[0];

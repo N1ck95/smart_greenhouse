@@ -120,6 +120,7 @@ public class Controls {
 	public static ArrayList<CI> smokeControl(int val, int targetValue, ArrayList<String> actuators) {
 		//if there is a fire, turn on all the sprinklers regardless of the fire so that we dont risk expansion of the fire
 		int i = 0;
+		int j = 0;
 		ArrayList<CI> turn_on_act = new ArrayList<CI>();
 		if (val == 1) {
 			for (i = 0; i< actuators.size(); i++) {
@@ -127,7 +128,10 @@ public class Controls {
 			}
 		} else //if there is no smoke i.e no fire anymore
 		if (val == 0) {
-			turn_on_act.add(new CI("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + actuators.get(i),"0"));
+			for (j = 0;j<actuators.size();j++) {
+				turn_on_act.add(new CI("coap://127.0.0.1:5683/~/mn-cse/mn-name/Service_AE/" + actuators.get(j),"0"));
+			}
+			
 		}
 		return turn_on_act;
 	}
